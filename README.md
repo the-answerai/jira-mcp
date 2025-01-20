@@ -7,9 +7,11 @@ A Model Context Protocol (MCP) server implementation that provides access to JIR
 - Search JIRA issues using JQL (maximum 50 results per request)
 - Retrieve epic children with comment history (maximum 100 issues per request)
 - Get detailed issue information including comments and related issues
+- Create, update, and manage JIRA issues
 - Extract issue mentions from Atlassian Document Format
 - Track issue relationships (mentions, links, parent/child, epics)
 - Clean and transform rich JIRA content
+- Support for file attachments
 
 ## Prerequisites
 
@@ -73,7 +75,7 @@ Add the following configuration under the `mcpServers` object:
 ```
 
 ### 4. Restart the MCP server.
- Within Cline's MCP settings, restart the MCP server. Restart Claude Desktop to load the new MCP server.
+Within Cline's MCP settings, restart the MCP server. Restart Claude Desktop to load the new MCP server.
 
 ## Development
 
@@ -119,6 +121,48 @@ Input Schema:
 }
 ```
 
+### create_issue
+Create a new JIRA issue with specified fields.
+
+Input Schema:
+```typescript
+{
+  projectKey: string, // The project key where the issue will be created
+  issueType: string, // The type of issue (e.g., "Bug", "Story", "Task")
+  summary: string, // The issue summary/title
+  description?: string, // Optional issue description
+  fields?: { // Optional additional fields
+    [key: string]: any
+  }
+}
+```
+
+### update_issue
+Update fields of an existing JIRA issue.
+
+Input Schema:
+```typescript
+{
+  issueKey: string, // The key of the issue to update
+  fields: { // Fields to update
+    [key: string]: any
+  }
+}
+```
+
+### add_attachment
+Add a file attachment to a JIRA issue.
+
+Input Schema:
+```typescript
+{
+  issueKey: string, // The key of the issue
+  fileContent: string, // Base64 encoded file content
+  filename: string // Name of the file to be attached
+}
+```
+
+
 ## Data Cleaning Features
 
 - Extracts text from Atlassian Document Format
@@ -128,6 +172,8 @@ Input Schema:
 - Tracks epic associations
 - Includes comment history with author information
 - Removes unnecessary metadata from responses
+- Recursively processes content nodes for mentions
+- Deduplicates issue mentions
 
 ## Technical Details
 
@@ -135,15 +181,25 @@ Input Schema:
 - Uses JIRA REST API v3
 - Basic authentication with API tokens
 - Batched API requests for related data
-- Error handling with detailed messages
+- Robust error handling
+- Rate limiting considerations
 - Maximum limits:
   - Search results: 50 issues per request
   - Epic children: 100 issues per request
+- Support for multipart form data for attachments
+- Automatic content type detection
 
 ## Error Handling
 
-- Basic error handling for API failures
-- Network error detection
-- Issue not found handling
-- Error message formatting with status codes
+The server implements a comprehensive error handling strategy:
+
+- Network error detection and appropriate messaging
+- HTTP status code handling (especially 404 for issues)
+- Detailed error messages with status codes
 - Error details logging to console
+- Input validation for all parameters
+- Safe error propagation through MCP protocol
+- Specialized handling for common JIRA API errors
+- Base64 validation for attachments
+- JQL syntax error handling
+- Rate limit detection
