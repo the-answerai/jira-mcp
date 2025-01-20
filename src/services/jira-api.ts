@@ -363,4 +363,32 @@ async createIssue(projectKey: string, issueType: string, summary: string, descri
       this.handleAxiosError(error);
     }
   }
+
+  async addAttachment(issueKey: string, file: Buffer, filename: string): Promise<{ id: string, filename: string }> {
+    try {
+      // Create FormData object for file upload
+      const formData = new FormData();
+      formData.append('file', new Blob([file]), filename);
+
+      const response = await this.client.post(
+        `/rest/api/3/issue/${issueKey}/attachments`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'X-Atlassian-Token': 'no-check'  // Required for file uploads
+          }
+        }
+      );
+
+      // JIRA returns an array with one item for single file upload
+      const attachment = response.data[0];
+      return {
+        id: attachment.id,
+        filename: attachment.filename
+      };
+    } catch (error) {
+      this.handleAxiosError(error);
+    }
+  }
 }

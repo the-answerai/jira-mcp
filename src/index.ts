@@ -25,7 +25,7 @@ class JiraServer {
     this.server = new Server(
       {
         name: 'jira-mcp',
-        version: '0.1.0',
+        version: '0.2.0',
       },
       {
         capabilities: {
@@ -146,6 +146,29 @@ class JiraServer {
             additionalProperties: false,
           },
         },
+        {
+          name: 'add_attachment',
+          description: 'Add a file attachment to a JIRA issue',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              issueKey: {
+                type: 'string',
+                description: 'The key of the issue to add attachment to',
+              },
+              fileContent: {
+                type: 'string',
+                description: 'Base64 encoded content of the file',
+              },
+              filename: {
+                type: 'string',
+                description: 'Name of the file to be attached',
+              },
+            },
+            required: ['issueKey', 'fileContent', 'filename'],
+            additionalProperties: false,
+          },
+        },
       ],
     }));
 
@@ -235,6 +258,31 @@ class JiraServer {
                 {
                   type: 'text',
                   text: JSON.stringify({ message: `Issue ${issueKey} updated successfully` }, null, 2),
+                },
+              ],
+            };
+          }
+
+          case 'add_attachment': {
+            const { issueKey, fileContent, filename } = request.params.arguments as {
+              issueKey: string;
+              fileContent: string;
+              filename: string;
+            };
+
+            // Convert base64 to Buffer
+            const fileBuffer = Buffer.from(fileContent, 'base64');
+            
+            const result = await this.jiraApi.addAttachment(issueKey, fileBuffer, filename);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify({
+                    message: `File ${filename} attached successfully to issue ${issueKey}`,
+                    attachmentId: result.id,
+                    filename: result.filename
+                  }, null, 2),
                 },
               ],
             };
