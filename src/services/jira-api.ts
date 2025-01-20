@@ -279,53 +279,86 @@ export class JiraApiService {
     }
   }
 
-  async getIssueWithComments(issueId: string): Promise<CleanJiraIssue> {
-    try {
-      // Get issue with expanded fields for relationships
-      const [issueResponse, commentsResponse] = await Promise.all([
-        this.client.get(`/rest/api/3/issue/${issueId}`, {
-          params: {
-            fields: [
-              'id', 'key', 'summary', 'description', 'status', 
-              'created', 'updated', 'parent', 'subtasks',
-              'customfield_10014', // Epic Link field
-              'issuelinks' // For formal issue links
-            ],
-            expand: 'names,renderedFields'
-          }
-        }),
-        this.client.get(`/rest/api/3/issue/${issueId}/comment`)
-      ]);
-
-      const issue = this.cleanIssue(issueResponse.data);
-      const comments = commentsResponse.data.comments.map((comment: any) => 
-        this.cleanComment(comment)
-      );
-
-      // Add comment mentions to related issues
-          const commentMentions = comments.flatMap((comment: CleanComment) => comment.mentions);
-          issue.relatedIssues = [
-            ...issue.relatedIssues,
-            ...commentMentions
-          ];
-
-      issue.comments = comments;
-
-      // If there's an epic link, fetch its details
-      if (issue.epicLink) {
-        try {
-          const epicResponse = await this.client.get(`/rest/api/3/issue/${issue.epicLink.key}`, {
-            params: {
-              fields: ['summary']
-            }
-          });
-          issue.epicLink.summary = epicResponse.data.fields?.summary;
-        } catch (error) {
-          console.error('Failed to fetch epic details:', error);
+async getIssueWithComments(issueId: string): Promise<CleanJiraIssue> {
+  try {
+    // Get issue with expanded fields for relationships
+    const [issueResponse, commentsResponse] = await Promise.all([
+      this.client.get(`/rest/api/3/issue/${issueId}`, {
+        params: {
+          fields: [
+            'id', 'key', 'summary', 'description', 'status',
+            'created', 'updated', 'parent', 'subtasks',
+            'customfield_10014', // Epic Link field
+            'issuelinks' // For formal issue links
+          ],
+          expand: 'names,renderedFields'
         }
-      }
+      }),
+      this.client.get(`/rest/api/3/issue/${issueId}/comment`)
+    ]);
 
-      return issue;
+    const issue = this.cleanIssue(issueResponse.data);
+    const comments = commentsResponse.data.comments.map((comment: any) =>
+      this.cleanComment(comment)
+    );
+
+    // Add comment mentions to related issues
+    const commentMentions = comments.flatMap((comment: CleanComment) => comment.mentions);
+    issue.relatedIssues = [
+      ...issue.relatedIssues,
+      ...commentMentions
+    ];
+
+    issue.comments = comments;
+
+    // If there's an epic link, fetch its details
+    if (issue.epicLink) {
+      try {
+        const epicResponse = await this.client.get(`/rest/api/3/issue/${issue.epicLink.key}`, {
+          params: {
+            fields: ['summary']
+          }
+        });
+        issue.epicLink.summary = epicResponse.data.fields?.summary;
+      } catch (error) {
+        console.error('Failed to fetch epic details:', error);
+      }
+    }
+
+    return issue;
+  } catch (error) {
+    this.handleAxiosError(error);
+  }
+}
+
+async createIssue(projectKey: string, issueType: string, summary: string, description?: string, fields?: Record<string, any>): Promise<{id: string, key: string}> {
+  try {
+    const payload = {
+      fields: {
+        project: {
+          key: projectKey,
+        },
+        summary,
+        issuetype: {
+          name: issueType,
+        },
+        ...(description && { description }),
+        ...fields,
+      },
+    };
+
+    const response = await this.client.post('/rest/api/3/issue', payload);
+    return response.data;
+  } catch (error) {
+    this.handleAxiosError(error);
+  }
+}
+
+  async updateIssue(issueKey: string, fields: Record<string, any>): Promise<void> {
+    try {
+      await this.client.put(`/rest/api/3/issue/${issueKey}`, {
+        fields
+      });
     } catch (error) {
       this.handleAxiosError(error);
     }

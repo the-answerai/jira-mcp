@@ -94,6 +94,58 @@ class JiraServer {
             additionalProperties: false,
           },
         },
+        {
+          name: 'create_issue',
+          description: 'Create a new JIRA issue',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              projectKey: {
+                type: 'string',
+                description: 'The project key where the issue will be created',
+              },
+              issueType: {
+                type: 'string',
+                description: 'The type of issue to create (e.g., "Bug", "Story", "Task")',
+              },
+              summary: {
+                type: 'string',
+                description: 'The issue summary/title',
+              },
+              description: {
+                type: 'string',
+                description: 'The issue description',
+              },
+              fields: {
+                type: 'object',
+                description: 'Additional fields to set on the issue',
+                additionalProperties: true,
+              },
+            },
+            required: ['projectKey', 'issueType', 'summary'],
+            additionalProperties: false,
+          },
+        },
+        {
+          name: 'update_issue',
+          description: 'Update an existing JIRA issue',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              issueKey: {
+                type: 'string',
+                description: 'The key of the issue to update',
+              },
+              fields: {
+                type: 'object',
+                description: 'Fields to update on the issue',
+                additionalProperties: true,
+              },
+            },
+            required: ['issueKey', 'fields'],
+            additionalProperties: false,
+          },
+        },
       ],
     }));
 
@@ -146,6 +198,43 @@ class JiraServer {
                 {
                   type: 'text',
                   text: JSON.stringify(response, null, 2),
+                },
+              ],
+            };
+          }
+
+          case 'create_issue': {
+            const { projectKey, issueType, summary, description, fields } = request.params.arguments as {
+              projectKey: string;
+              issueType: string;
+              summary: string;
+              description?: string;
+              fields?: Record<string, any>;
+            };
+
+            const response = await this.jiraApi.createIssue(projectKey, issueType, summary, description, fields);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(response, null, 2),
+                },
+              ],
+            };
+          }
+
+          case 'update_issue': {
+            const { issueKey, fields } = request.params.arguments as {
+              issueKey: string;
+              fields: Record<string, any>;
+            };
+
+            await this.jiraApi.updateIssue(issueKey, fields);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify({ message: `Issue ${issueKey} updated successfully` }, null, 2),
                 },
               ],
             };
