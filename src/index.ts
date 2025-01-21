@@ -147,6 +147,44 @@ class JiraServer {
           },
         },
         {
+          name: 'get_transitions',
+          description: 'Get available status transitions for a JIRA issue',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              issueKey: {
+                type: 'string',
+                description: 'The key of the issue to get transitions for',
+              },
+            },
+            required: ['issueKey'],
+            additionalProperties: false,
+          },
+        },
+        {
+          name: 'transition_issue',
+          description: 'Change the status of a JIRA issue by performing a transition',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              issueKey: {
+                type: 'string',
+                description: 'The key of the issue to transition',
+              },
+              transitionId: {
+                type: 'string',
+                description: 'The ID of the transition to perform',
+              },
+              comment: {
+                type: 'string',
+                description: 'Optional comment to add with the transition',
+              },
+            },
+            required: ['issueKey', 'transitionId'],
+            additionalProperties: false,
+          },
+        },
+        {
           name: 'add_attachment',
           description: 'Add a file attachment to a JIRA issue',
           inputSchema: {
@@ -258,6 +296,43 @@ class JiraServer {
                 {
                   type: 'text',
                   text: JSON.stringify({ message: `Issue ${issueKey} updated successfully` }, null, 2),
+                },
+              ],
+            };
+          }
+
+          case 'get_transitions': {
+            const { issueKey } = request.params.arguments as { issueKey: string };
+            if (!issueKey) {
+              throw new McpError(ErrorCode.InvalidParams, 'Issue key is required');
+            }
+
+            const response = await this.jiraApi.getTransitions(issueKey);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(response, null, 2),
+                },
+              ],
+            };
+          }
+
+          case 'transition_issue': {
+            const { issueKey, transitionId, comment } = request.params.arguments as {
+              issueKey: string;
+              transitionId: string;
+              comment?: string;
+            };
+
+            await this.jiraApi.transitionIssue(issueKey, transitionId, comment);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify({ 
+                    message: `Issue ${issueKey} transitioned successfully${comment ? ' with comment' : ''}` 
+                  }, null, 2),
                 },
               ],
             };

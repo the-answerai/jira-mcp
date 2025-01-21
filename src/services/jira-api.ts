@@ -364,6 +364,47 @@ async createIssue(projectKey: string, issueType: string, summary: string, descri
     }
   }
 
+  async getTransitions(issueKey: string): Promise<Array<{id: string, name: string, to: {name: string}}>> {
+    try {
+      const response = await this.client.get(`/rest/api/3/issue/${issueKey}/transitions`);
+      return response.data.transitions;
+    } catch (error) {
+      this.handleAxiosError(error);
+    }
+  }
+
+  async transitionIssue(issueKey: string, transitionId: string, comment?: string): Promise<void> {
+    try {
+      const payload: any = {
+        transition: { id: transitionId }
+      };
+      
+      if (comment) {
+        payload.update = {
+          comment: [{
+            add: {
+              body: {
+                type: 'doc',
+                version: 1,
+                content: [{
+                  type: 'paragraph',
+                  content: [{
+                    type: 'text',
+                    text: comment
+                  }]
+                }]
+              }
+            }
+          }]
+        };
+      }
+
+      await this.client.post(`/rest/api/3/issue/${issueKey}/transitions`, payload);
+    } catch (error) {
+      this.handleAxiosError(error);
+    }
+  }
+
   async addAttachment(issueKey: string, file: Buffer, filename: string): Promise<{ id: string, filename: string }> {
     try {
       // Create FormData object for file upload
