@@ -19,13 +19,13 @@
   "author": "Dimosthenis Kaponis",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.1.1",
+    "@modelcontextprotocol/sdk": "^1.4.1",
     "typescript": "^5.7.3"
   },
   "devDependencies": {
-    "@types/node": "^22.10.5",
+    "@types/node": "^22.10.10",
     "bun-types": "^1.2.0",
-    "vite": "^5.0.0",
-    "vite-plugin-dts": "^3.7.0"
+    "vite": "^5.4.14",
+    "vite-plugin-dts": "^3.9.1"
   }
 }
