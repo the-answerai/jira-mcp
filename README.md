@@ -212,3 +212,7 @@ The server implements a comprehensive error handling strategy:
 - JQL syntax validation and error handling
 - Rate limit detection
 - Attachment parameter validation
+
+## LICENCE
+
+This project is licensed under the MIT License - see the [LICENCE.md](LICENCE) file for details.
