@@ -1,3 +1,4 @@
+import { expect, test, describe, beforeEach, afterEach } from 'bun:test';
 import { JiraApiService } from '../jira-api.js';
 
 const mockFormattedDescription = {
@@ -26,11 +27,10 @@ const mockFormattedDescription = {
     }
   }
 };
-import MockAdapter from 'axios-mock-adapter';
 
 describe('JiraApiService', () => {
   describe('cleanIssue', () => {
-    it('should properly handle formatted text in description', () => {
+    test('should properly handle formatted text in description', () => {
       const service = new JiraApiService('http://test', 'test@test.com', 'token');
       const result = (service as any).cleanIssue(mockFormattedDescription);
       expect(result.description).toBe('As a user I want to see formatted text');
@@ -41,34 +41,35 @@ describe('JiraApiService', () => {
   const apiToken = 'test-token';
   const email = 'user@domain.net';
   let service: JiraApiService;
-  let mock: MockAdapter;
+  let originalFetch: typeof fetch;
 
   beforeEach(() => {
     service = new JiraApiService(baseUrl, email, apiToken);
-    // @ts-ignore - accessing private property for testing
-    mock = new MockAdapter(service.client);
+    originalFetch = global.fetch;
   });
 
   afterEach(() => {
-    mock.reset();
+    global.fetch = originalFetch;
   });
 
   describe('constructor', () => {
-    it('should set up axios instance with correct base URL and auth header', async () => {
-      // Test the actual request to verify headers
-      mock.onGet('/rest/api/3/search').reply(config => {
-        expect(config.baseURL).toBe(baseUrl);
-        expect(config.headers?.Authorization).toBe(`Basic ${Buffer.from(`${email}:${apiToken}`).toString('base64')}`);
-        expect(config.headers?.['Content-Type']).toBe('application/json');
-        return [200, { issues: [] }];
-      });
+    test('should set up fetch with correct base URL and auth header', async () => {
+      // Mock fetch to verify headers
+      global.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = input.toString();
+        expect(url.startsWith(baseUrl)).toBe(true);
+        const headers = init?.headers as Headers;
+        expect(headers.get('Authorization')).toBe(`Basic ${Buffer.from(`${email}:${apiToken}`).toString('base64')}`);
+        expect(headers.get('Content-Type')).toBe('application/json');
+        return new Response(JSON.stringify({ issues: [] }));
+      };
 
       await service.searchIssues('project = TEST');
     });
   });
 
   describe('searchIssues', () => {
-    it('should make GET request to correct endpoint and clean response', async () => {
+    test('should make GET request to correct endpoint and clean response', async () => {
       const mockResponse = {
         issues: [
           {
@@ -157,35 +158,36 @@ describe('JiraApiService', () => {
           relatedIssues: [
             {
               key: 'TEST-2',
-              type: 'mention',
-              source: 'description'
+              type: 'mention' as const,
+              source: 'description' as const
             },
             {
               key: 'TEST-3',
-              type: 'mention',
-              source: 'description'
+              type: 'mention' as const,
+              source: 'description' as const
             },
             {
               key: 'TEST-4',
               summary: 'Blocking Issue',
-              type: 'link',
+              type: 'link' as const,
               relationship: 'is blocked by',
-              source: 'description'
+              source: 'description' as const
             }
           ]
         }]
       };
 
-      mock.onGet('/rest/api/3/search').reply(200, mockResponse);
+      global.fetch = async () => new Response(JSON.stringify(mockResponse));
 
       const result = await service.searchIssues('project = TEST');
       expect(result).toEqual(expectedResponse);
     });
 
-    it('should handle error responses', async () => {
-      mock.onGet('/rest/api/3/search').reply(403, {
-        message: 'You do not have permission'
-      });
+    test('should handle error responses', async () => {
+      global.fetch = async () => new Response(
+        JSON.stringify({ message: 'You do not have permission' }), 
+        { status: 403 }
+      );
 
       await expect(service.searchIssues('project = TEST')).rejects.toThrow('JIRA API Error: You do not have permission');
     });
@@ -243,9 +245,18 @@ describe('JiraApiService', () => {
       ]
     };
 
-    it('should fetch epic children with comments', async () => {
-      mock.onGet('/rest/api/3/search').reply(200, mockResponse);
-      mock.onGet('/rest/api/3/issue/TEST-2/comment').reply(200, mockComments);
+    test('should fetch epic children with comments', async () => {
+      let fetchCount = 0;
+      global.fetch = async (input: RequestInfo | URL) => {
+        const url = input.toString();
+        if (url.includes('/search')) {
+          return new Response(JSON.stringify(mockResponse));
+        }
+        if (url.includes('/comment')) {
+          return new Response(JSON.stringify(mockComments));
+        }
+        throw new Error(`Unexpected URL: ${url}`);
+      };
 
       const expectedResponse = [{
         id: '2',
@@ -264,14 +275,14 @@ describe('JiraApiService', () => {
           mentions: [
             {
               key: 'TEST-5',
-              type: 'mention',
-              source: 'comment',
+              type: 'mention' as const,
+              source: 'comment' as const,
               commentId: '1'
             },
             {
               key: 'TEST-6',
-              type: 'mention',
-              source: 'comment',
+              type: 'mention' as const,
+              source: 'comment' as const,
               commentId: '1'
             }
           ]
@@ -279,14 +290,14 @@ describe('JiraApiService', () => {
         relatedIssues: [
           {
             key: 'TEST-5',
-            type: 'mention',
-            source: 'comment',
+            type: 'mention' as const,
+            source: 'comment' as const,
             commentId: '1'
           },
           {
             key: 'TEST-6',
-            type: 'mention',
-            source: 'comment',
+            type: 'mention' as const,
+            source: 'comment' as const,
             commentId: '1'
           }
         ]
@@ -296,10 +307,11 @@ describe('JiraApiService', () => {
       expect(result).toEqual(expectedResponse);
     });
 
-    it('should handle error responses', async () => {
-      mock.onGet('/rest/api/3/search').reply(403, {
-        message: 'You do not have permission'
-      });
+    test('should handle error responses', async () => {
+      global.fetch = async () => new Response(
+        JSON.stringify({ message: 'You do not have permission' }), 
+        { status: 403 }
+      );
 
       await expect(service.getEpicChildren(epicKey)).rejects.toThrow('JIRA API Error: You do not have permission');
     });
@@ -381,10 +393,20 @@ describe('JiraApiService', () => {
       ]
     };
 
-    it('should make parallel requests for issue, comments, and epic details', async () => {
-      mock.onGet(`/rest/api/3/issue/${issueId}`).reply(200, mockIssue);
-      mock.onGet(`/rest/api/3/issue/${issueId}/comment`).reply(200, mockComments);
-      mock.onGet('/rest/api/3/issue/EPIC-1').reply(200, mockEpic);
+    test('should make parallel requests for issue, comments, and epic details', async () => {
+      global.fetch = async (input: RequestInfo | URL) => {
+        const url = input.toString();
+        if (url.includes(`/issue/${issueId}?`)) {
+          return new Response(JSON.stringify(mockIssue));
+        }
+        if (url.includes('/comment')) {
+          return new Response(JSON.stringify(mockComments));
+        }
+        if (url.includes('/issue/EPIC-1')) {
+          return new Response(JSON.stringify(mockEpic));
+        }
+        throw new Error(`Unexpected URL: ${url}`);
+      };
 
       const result = await service.getIssueWithComments(issueId);
       expect(result).toEqual({
@@ -421,8 +443,8 @@ describe('JiraApiService', () => {
           mentions: [
             {
               key: 'TEST-9',
-              type: 'mention',
-              source: 'comment',
+              type: 'mention' as const,
+              source: 'comment' as const,
               commentId: '1'
             }
           ]
@@ -430,45 +452,56 @@ describe('JiraApiService', () => {
         relatedIssues: [
           {
             key: 'TEST-7',
-            type: 'mention',
-            source: 'description'
+            type: 'mention' as const,
+            source: 'description' as const
           },
           {
             key: 'TEST-8',
             summary: 'Blocked Issue',
-            type: 'link',
+            type: 'link' as const,
             relationship: 'blocks',
-            source: 'description'
+            source: 'description' as const
           },
           {
             key: 'TEST-9',
-            type: 'mention',
-            source: 'comment',
+            type: 'mention' as const,
+            source: 'comment' as const,
             commentId: '1'
           }
         ]
       });
     });
 
-    it('should handle epic fetch failure gracefully', async () => {
-      mock.onGet(`/rest/api/3/issue/${issueId}`).reply(200, mockIssue);
-      mock.onGet(`/rest/api/3/issue/${issueId}/comment`).reply(200, mockComments);
-      mock.onGet('/rest/api/3/issue/EPIC-1').reply(404);
+    test('should handle epic fetch failure gracefully', async () => {
+      global.fetch = async (input: RequestInfo | URL) => {
+        const url = input.toString();
+        if (url.includes(`/issue/${issueId}?`)) {
+          return new Response(JSON.stringify(mockIssue));
+        }
+        if (url.includes('/comment')) {
+          return new Response(JSON.stringify(mockComments));
+        }
+        if (url.includes('/issue/EPIC-1')) {
+          return new Response('Not Found', { status: 404 });
+        }
+        throw new Error(`Unexpected URL: ${url}`);
+      };
 
       const result = await service.getIssueWithComments(issueId);
       expect(result.epicLink?.summary).toBeUndefined();
     });
 
-    it('should handle 404 errors correctly', async () => {
-      mock.onGet(`/rest/api/3/issue/${issueId}`).reply(404);
+    test('should handle 404 errors correctly', async () => {
+      global.fetch = async () => new Response('Not Found', { status: 404 });
 
       await expect(service.getIssueWithComments(issueId)).rejects.toThrow(`Issue not found: ${issueId}`);
     });
 
-    it('should handle permission errors', async () => {
-      mock.onGet(`/rest/api/3/issue/${issueId}`).reply(403, {
-        message: 'You do not have permission to view this issue'
-      });
+    test('should handle permission errors', async () => {
+      global.fetch = async () => new Response(
+        JSON.stringify({ message: 'You do not have permission to view this issue' }), 
+        { status: 403 }
+      );
 
       await expect(service.getIssueWithComments(issueId)).rejects.toThrow(
         'JIRA API Error: You do not have permission to view this issue'

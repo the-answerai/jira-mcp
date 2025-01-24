@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
@@ -9,9 +9,17 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { JiraApiService } from './services/jira-api.js';
 
-const JIRA_API_TOKEN = process.env.JIRA_API_TOKEN ?? '';
-const JIRA_BASE_URL = process.env.JIRA_BASE_URL ?? '';
-const JIRA_USER_EMAIL = process.env.JIRA_USER_EMAIL ?? '';
+declare module 'bun' {
+  interface Env {
+    JIRA_API_TOKEN: string;
+    JIRA_BASE_URL: string;
+    JIRA_USER_EMAIL: string;
+  }
+}
+
+const JIRA_API_TOKEN = process.env.JIRA_API_TOKEN;
+const JIRA_BASE_URL = process.env.JIRA_BASE_URL;
+const JIRA_USER_EMAIL = process.env.JIRA_USER_EMAIL;
 
 if (!JIRA_API_TOKEN || !JIRA_BASE_URL || !JIRA_USER_EMAIL) {
   throw new Error('JIRA_API_TOKEN, JIRA_USER_EMAIL and JIRA_BASE_URL environment variables are required');
@@ -345,7 +353,7 @@ class JiraServer {
               filename: string;
             };
 
-            // Convert base64 to Buffer
+            // Convert base64 to Buffer using Bun's Buffer API
             const fileBuffer = Buffer.from(fileContent, 'base64');
             
             const result = await this.jiraApi.addAttachment(issueKey, fileBuffer, filename);

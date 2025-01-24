@@ -2,32 +2,30 @@
   "name": "jira-mcp",
   "version": "1.0.0",
   "description": "JIRA MCP Server",
-  "main": "build/index.js",
   "type": "module",
   "scripts": {
-    "build": "tsc && chmod +x build/index.js",
-    "start": "node build/index.js",
-    "dev": "tsc -w",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch"
+    "build": "vite build && chmod +x dist/index.js",
+    "start": "bun dist/index.js",
+    "dev": "vite",
+    "test": "bun test",
+    "test:watch": "bun test --watch"
   },
   "keywords": [
     "mcp",
     "jira",
-    "typescript"
+    "typescript",
+    "bun"
   ],
   "author": "Dimosthenis Kaponis",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.1.1",
-    "axios": "^1.7.9",
     "typescript": "^5.7.3"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.14",
     "@types/node": "^22.10.5",
-    "axios-mock-adapter": "^2.1.0",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.2.5"
+    "bun-types": "^1.2.0",
+    "vite": "^5.0.0",
+    "vite-plugin-dts": "^3.7.0"
   }
 }

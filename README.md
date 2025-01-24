@@ -1,22 +1,21 @@
 # JIRA MCP Server
 
-A Model Context Protocol (MCP) server implementation that provides access to JIRA data with relationship tracking and data cleaning for AI context windows.
+A Model Context Protocol (MCP) server implementation that provides access to JIRA data with relationship tracking, optimized data payloads, and data cleaning for AI context windows.
 
 ## Features
 
 - Search JIRA issues using JQL (maximum 50 results per request)
-- Retrieve epic children with comment history (maximum 100 issues per request)
+- Retrieve epic children with comment history and optimized payloads (maximum 100 issues per request)
 - Get detailed issue information including comments and related issues
 - Create, update, and manage JIRA issues
 - Extract issue mentions from Atlassian Document Format
 - Track issue relationships (mentions, links, parent/child, epics)
-- Clean and transform rich JIRA content
-- Support for file attachments
+- Clean and transform rich JIRA content for AI context efficiency
+- Support for file attachments with secure multipart upload handling
 
 ## Prerequisites
 
-- Node.js
-- TypeScript
+- [Bun](https://bun.sh) (v1.0.0 or higher)
 - JIRA account with API access
 
 ## Environment Variables
@@ -37,8 +36,8 @@ cd jira-mcp
 
 ### 2. Install dependencies and build:
 ```bash
-npm install
-npm run build
+bun install
+bun run build
 ```
 
 ### 3. Configure the MCP server:
@@ -81,12 +80,17 @@ Within Cline's MCP settings, restart the MCP server. Restart Claude Desktop to l
 
 Run tests:
 ```bash
-npm test
+bun test
+```
+
+Watch mode for development:
+```bash
+bun run dev
 ```
 
 To rebuild after changes:
 ```bash
-npm run build
+bun run build
 ```
 
 ## Available MCP Tools
@@ -162,7 +166,6 @@ Input Schema:
 }
 ```
 
-
 ## Data Cleaning Features
 
 - Extracts text from Atlassian Document Format
@@ -178,16 +181,20 @@ Input Schema:
 ## Technical Details
 
 - Built with TypeScript in strict mode
+- Uses Bun runtime for improved performance
+- Vite for optimized builds
 - Uses JIRA REST API v3
 - Basic authentication with API tokens
 - Batched API requests for related data
+- Optimized response payloads for AI context windows
+- Efficient transformation of complex Atlassian structures
 - Robust error handling
 - Rate limiting considerations
 - Maximum limits:
   - Search results: 50 issues per request
   - Epic children: 100 issues per request
-- Support for multipart form data for attachments
-- Automatic content type detection
+- Support for multipart form data for secure file attachments
+- Automatic content type detection and validation
 
 ## Error Handling
 
@@ -201,5 +208,7 @@ The server implements a comprehensive error handling strategy:
 - Safe error propagation through MCP protocol
 - Specialized handling for common JIRA API errors
 - Base64 validation for attachments
-- JQL syntax error handling
+- Multipart request failure handling
+- JQL syntax validation and error handling
 - Rate limit detection
+- Attachment parameter validation
