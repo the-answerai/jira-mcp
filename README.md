@@ -215,4 +215,4 @@ The server implements a comprehensive error handling strategy:
 
 ## LICENCE
 
-This project is licensed under the MIT License - see the [LICENCE.md](LICENCE) file for details.
+This project is licensed under the MIT License - see the [LICENCE](LICENCE) file for details.
