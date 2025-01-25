@@ -209,7 +209,6 @@ The server implements a comprehensive error handling strategy:
 - Specialized handling for common JIRA API errors
 - Base64 validation for attachments
 - Multipart request failure handling
-- JQL syntax validation and error handling
 - Rate limit detection
 - Attachment parameter validation
 
