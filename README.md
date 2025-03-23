@@ -2,6 +2,8 @@
 
 A Model Context Protocol (MCP) server implementation that provides access to JIRA data with relationship tracking, optimized data payloads, and data cleaning for AI context windows.
 
+ℹ️ There is a separate MCP server [for Confluence](https://github.com/cosmix/confluence-mcp)
+
 ## Features
 
 - Search JIRA issues using JQL (maximum 50 results per request)
