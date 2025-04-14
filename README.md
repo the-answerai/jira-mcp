@@ -10,6 +10,7 @@ A Model Context Protocol (MCP) server implementation that provides access to JIR
 - Retrieve epic children with comment history and optimized payloads (maximum 100 issues per request)
 - Get detailed issue information including comments and related issues
 - Create, update, and manage JIRA issues
+- Add comments to issues
 - Extract issue mentions from Atlassian Document Format
 - Track issue relationships (mentions, links, parent/child, epics)
 - Clean and transform rich JIRA content for AI context efficiency
@@ -165,6 +166,17 @@ Input Schema:
   issueKey: string, // The key of the issue
   fileContent: string, // Base64 encoded file content
   filename: string // Name of the file to be attached
+}
+```
+
+### add_comment
+Add a comment to a JIRA issue. Accepts plain text and converts it to the required Atlassian Document Format internally.
+
+Input Schema:
+```typescript
+{
+  issueIdOrKey: string, // The ID or key of the issue to add the comment to
+  body: string // The content of the comment (plain text)
 }
 ```
 

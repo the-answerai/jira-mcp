@@ -45,3 +45,41 @@ export interface SearchIssuesResponse {
   total: number;
   issues: CleanJiraIssue[];
 }
+
+// Basic Atlassian Document Format (ADF) structure for a simple paragraph
+export interface AdfDoc {
+  version: 1;
+  type: 'doc';
+  content: AdfNode[];
+}
+
+export type AdfNodeType = 'paragraph' | 'text'; // Add other types as needed
+
+export interface AdfNode {
+  type: AdfNodeType;
+  content?: AdfNode[];
+  text?: string;
+}
+
+// Response structure from JIRA API after adding a comment
+export interface JiraCommentResponse {
+  id: string;
+  self: string; // URL to the comment
+  author: {
+    displayName: string;
+    // ... other author details
+  };
+  body: AdfDoc; // JIRA returns the comment body in ADF
+  created: string;
+  updated: string;
+  // ... other fields
+}
+
+// Cleaned response for the MCP tool
+export interface AddCommentResponse {
+  id: string;
+  author: string;
+  created: string;
+  updated: string;
+  body: string; // Return plain text for simplicity
+}

@@ -526,4 +526,94 @@ describe('JiraApiService', () => {
       );
     });
   });
+
+  describe('addCommentToIssue', () => {
+    const issueIdOrKey = 'TEST-10';
+    const commentBody = 'This is a new comment.';
+    const expectedAdf = {
+      version: 1,
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            {
+              type: 'text',
+              text: commentBody,
+            },
+          ],
+        },
+      ],
+    };
+    const mockApiResponse: any = { // Using 'any' for brevity in mock
+      id: '12345',
+      self: `${baseUrl}/rest/api/3/issue/${issueIdOrKey}/comment/12345`,
+      author: { displayName: 'Test User' },
+      body: expectedAdf, // JIRA returns ADF
+      created: '2024-01-02T00:00:00.000Z',
+      updated: '2024-01-02T00:00:00.000Z',
+    };
+    const expectedCleanResponse = {
+      id: '12345',
+      author: 'Test User',
+      created: '2024-01-02T00:00:00.000Z',
+      updated: '2024-01-02T00:00:00.000Z',
+      body: commentBody, // Cleaned response has plain text
+    };
+
+    test('should send POST request with correct ADF body and return cleaned response on success', async () => {
+      const mockFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = input.toString();
+        expect(url).toBe(`${baseUrl}/rest/api/3/issue/${issueIdOrKey}/comment`);
+        expect(init?.method).toBe('POST');
+        expect(init?.headers).toEqual(service['headers']); // Check if headers match the instance headers
+        
+        const sentBody = JSON.parse(init?.body as string);
+        expect(sentBody.body).toEqual(expectedAdf); // Verify the ADF structure
+
+        return new Response(JSON.stringify(mockApiResponse), { status: 201 });
+      };
+      mockFetch.preconnect = async () => {};
+      global.fetch = mockFetch;
+
+      const result = await service.addCommentToIssue(issueIdOrKey, commentBody);
+      expect(result).toEqual(expectedCleanResponse);
+    });
+
+    test('should handle 404 Not Found error', async () => {
+      const mockFetch = async () => new Response(
+        JSON.stringify({ errorMessages: ['Issue does not exist or you do not have permission to see it.'] }),
+        { status: 404 }
+      );
+      mockFetch.preconnect = async () => {};
+      global.fetch = mockFetch;
+
+      await expect(service.addCommentToIssue(issueIdOrKey, commentBody))
+        .rejects.toThrow('JIRA API Error: Issue does not exist or you do not have permission to see it.');
+    });
+
+    test('should handle 403 Forbidden error', async () => {
+      const mockFetch = async () => new Response(
+        JSON.stringify({ errorMessages: ['User does not have permission to comment on this issue.'] }),
+        { status: 403 }
+      );
+      mockFetch.preconnect = async () => {};
+      global.fetch = mockFetch;
+
+      await expect(service.addCommentToIssue(issueIdOrKey, commentBody))
+        .rejects.toThrow('JIRA API Error: User does not have permission to comment on this issue.');
+    });
+    
+    test('should handle 400 Bad Request error', async () => {
+      const mockFetch = async () => new Response(
+        JSON.stringify({ errorMessages: ['Invalid request body'] }),
+        { status: 400 }
+      );
+      mockFetch.preconnect = async () => {};
+      global.fetch = mockFetch;
+
+      await expect(service.addCommentToIssue(issueIdOrKey, commentBody))
+        .rejects.toThrow('JIRA API Error: Invalid request body');
+    });
+  });
 });

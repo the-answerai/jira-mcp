@@ -215,6 +215,25 @@ class JiraServer {
             additionalProperties: false,
           },
         },
+        {
+          name: 'add_comment',
+          description: 'Add a comment to a JIRA issue',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              issueIdOrKey: { // Renamed for clarity to match API path param
+                type: 'string',
+                description: 'The ID or key of the issue to add the comment to',
+              },
+              body: {
+                type: 'string',
+                description: 'The content of the comment (plain text)',
+              },
+            },
+            required: ['issueIdOrKey', 'body'],
+            additionalProperties: false,
+          },
+        },
       ],
     }));
 
@@ -366,6 +385,27 @@ class JiraServer {
                     attachmentId: result.id,
                     filename: result.filename
                   }, null, 2),
+                },
+              ],
+            };
+          }
+          
+          case 'add_comment': {
+            const { issueIdOrKey, body } = request.params.arguments as {
+              issueIdOrKey: string;
+              body: string;
+            };
+
+            if (!issueIdOrKey || !body) {
+              throw new McpError(ErrorCode.InvalidParams, 'issueIdOrKey and body are required');
+            }
+
+            const response = await this.jiraApi.addCommentToIssue(issueIdOrKey, body);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(response, null, 2),
                 },
               ],
             };

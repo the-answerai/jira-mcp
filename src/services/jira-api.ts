@@ -1,4 +1,11 @@
-import { SearchIssuesResponse, CleanJiraIssue, CleanComment } from '../types/jira.js';
+import { 
+  SearchIssuesResponse, 
+  CleanJiraIssue, 
+  CleanComment, 
+  AdfDoc, 
+  JiraCommentResponse,
+  AddCommentResponse
+} from '../types/jira.js';
 
 export class JiraApiService {
   private baseUrl: string;
@@ -17,15 +24,32 @@ export class JiraApiService {
   private async handleFetchError(response: Response, url?: string): Promise<never> {
     // First, check for network errors
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      let message = response.statusText; // Default to status text
+      let errorData = {};
+      try {
+        errorData = await response.json();
+        // Check for common JIRA error message structures
+        if (Array.isArray((errorData as any).errorMessages) && (errorData as any).errorMessages.length > 0) {
+          message = (errorData as any).errorMessages.join('; '); 
+        } else if ((errorData as any).message) {
+          message = (errorData as any).message;
+        } else if ((errorData as any).errorMessage) {
+           message = (errorData as any).errorMessage;
+        }
+      } catch (e) {
+        // Ignore JSON parsing errors if the body is not JSON or empty
+        console.warn('Could not parse JIRA error response body as JSON.');
+      }
 
-      // Extract error message from response with more details
-      const message = errorData?.message || errorData?.errorMessage || response.statusText;
       const details = JSON.stringify(errorData, null, 2);
       console.error('JIRA API Error Details:', details);
-      throw new Error(`JIRA API Error: ${message} (Status: ${response.status})`);
+      // Ensure message is not empty before including it
+      const errorMessage = message ? `: ${message}` : ''; 
+      throw new Error(`JIRA API Error${errorMessage} (Status: ${response.status})`);
     }
-    throw new Error('Unknown error occurred');
+    // This line should ideally not be reached if response.ok is true, 
+    // but kept for safety in case of unexpected fetch behavior.
+    throw new Error('Unknown error occurred during fetch operation.');
   }
 
   /**
@@ -409,6 +433,53 @@ export class JiraApiService {
     return {
       id: attachment.id,
       filename: attachment.filename
+    };
+  }
+
+  /**
+   * Converts plain text to a basic Atlassian Document Format (ADF) structure.
+   */
+  private createAdfFromBody(text: string): AdfDoc {
+    return {
+      version: 1,
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            {
+              type: 'text',
+              text: text,
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  /**
+   * Adds a comment to a JIRA issue.
+   */
+  async addCommentToIssue(issueIdOrKey: string, body: string): Promise<AddCommentResponse> {
+    const adfBody = this.createAdfFromBody(body);
+    
+    const payload = {
+      body: adfBody,
+      // visibility can be added here if needed
+    };
+
+    const response = await this.fetchJson<JiraCommentResponse>(`/rest/api/3/issue/${issueIdOrKey}/comment`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+
+    // Clean the response for the MCP tool
+    return {
+      id: response.id,
+      author: response.author.displayName,
+      created: response.created,
+      updated: response.updated,
+      body: this.extractTextContent(response.body.content) // Extract plain text from returned ADF
     };
   }
 }
