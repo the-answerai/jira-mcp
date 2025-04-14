@@ -55,7 +55,7 @@ describe('JiraApiService', () => {
   describe('constructor', () => {
     test('should set up fetch with correct base URL and auth header', async () => {
       // Mock fetch to verify headers
-      global.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const mockFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = input.toString();
         expect(url.startsWith(baseUrl)).toBe(true);
         const headers = init?.headers as Headers;
@@ -63,6 +63,8 @@ describe('JiraApiService', () => {
         expect(headers.get('Content-Type')).toBe('application/json');
         return new Response(JSON.stringify({ issues: [] }));
       };
+      mockFetch.preconnect = async () => {}; // Add dummy preconnect
+      global.fetch = mockFetch;
 
       await service.searchIssues('project = TEST');
     });
@@ -177,17 +179,21 @@ describe('JiraApiService', () => {
         }]
       };
 
-      global.fetch = async () => new Response(JSON.stringify(mockResponse));
+      const mockFetch1 = async () => new Response(JSON.stringify(mockResponse));
+      mockFetch1.preconnect = async () => {}; // Add dummy preconnect
+      global.fetch = mockFetch1;
 
       const result = await service.searchIssues('project = TEST');
       expect(result).toEqual(expectedResponse);
     });
 
     test('should handle error responses', async () => {
-      global.fetch = async () => new Response(
-        JSON.stringify({ message: 'You do not have permission' }), 
+      const mockFetch2 = async () => new Response(
+        JSON.stringify({ message: 'You do not have permission' }),
         { status: 403 }
       );
+      mockFetch2.preconnect = async () => {}; // Add dummy preconnect
+      global.fetch = mockFetch2;
 
       await expect(service.searchIssues('project = TEST')).rejects.toThrow('JIRA API Error: You do not have permission');
     });
@@ -247,7 +253,7 @@ describe('JiraApiService', () => {
 
     test('should fetch epic children with comments', async () => {
       let fetchCount = 0;
-      global.fetch = async (input: RequestInfo | URL) => {
+      const mockFetch3 = async (input: RequestInfo | URL) => {
         const url = input.toString();
         if (url.includes('/search')) {
           return new Response(JSON.stringify(mockResponse));
@@ -257,6 +263,8 @@ describe('JiraApiService', () => {
         }
         throw new Error(`Unexpected URL: ${url}`);
       };
+      mockFetch3.preconnect = async () => {}; // Add dummy preconnect
+      global.fetch = mockFetch3;
 
       const expectedResponse = [{
         id: '2',
@@ -308,10 +316,12 @@ describe('JiraApiService', () => {
     });
 
     test('should handle error responses', async () => {
-      global.fetch = async () => new Response(
-        JSON.stringify({ message: 'You do not have permission' }), 
+      const mockFetch4 = async () => new Response(
+        JSON.stringify({ message: 'You do not have permission' }),
         { status: 403 }
       );
+      mockFetch4.preconnect = async () => {}; // Add dummy preconnect
+      global.fetch = mockFetch4;
 
       await expect(service.getEpicChildren(epicKey)).rejects.toThrow('JIRA API Error: You do not have permission');
     });
@@ -394,7 +404,7 @@ describe('JiraApiService', () => {
     };
 
     test('should make parallel requests for issue, comments, and epic details', async () => {
-      global.fetch = async (input: RequestInfo | URL) => {
+      const mockFetch5 = async (input: RequestInfo | URL) => {
         const url = input.toString();
         if (url.includes(`/issue/${issueId}?`)) {
           return new Response(JSON.stringify(mockIssue));
@@ -407,6 +417,8 @@ describe('JiraApiService', () => {
         }
         throw new Error(`Unexpected URL: ${url}`);
       };
+      mockFetch5.preconnect = async () => {}; // Add dummy preconnect
+      global.fetch = mockFetch5;
 
       const result = await service.getIssueWithComments(issueId);
       expect(result).toEqual({
@@ -473,7 +485,7 @@ describe('JiraApiService', () => {
     });
 
     test('should handle epic fetch failure gracefully', async () => {
-      global.fetch = async (input: RequestInfo | URL) => {
+      const mockFetch6 = async (input: RequestInfo | URL) => {
         const url = input.toString();
         if (url.includes(`/issue/${issueId}?`)) {
           return new Response(JSON.stringify(mockIssue));
@@ -486,22 +498,28 @@ describe('JiraApiService', () => {
         }
         throw new Error(`Unexpected URL: ${url}`);
       };
+      mockFetch6.preconnect = async () => {}; // Add dummy preconnect
+      global.fetch = mockFetch6;
 
       const result = await service.getIssueWithComments(issueId);
       expect(result.epicLink?.summary).toBeUndefined();
     });
 
     test('should handle 404 errors correctly', async () => {
-      global.fetch = async () => new Response('Not Found', { status: 404 });
+      const mockFetch7 = async () => new Response('Not Found', { status: 404 });
+      mockFetch7.preconnect = async () => {}; // Add dummy preconnect
+      global.fetch = mockFetch7;
 
       await expect(service.getIssueWithComments(issueId)).rejects.toThrow(`Issue not found: ${issueId}`);
     });
 
     test('should handle permission errors', async () => {
-      global.fetch = async () => new Response(
-        JSON.stringify({ message: 'You do not have permission to view this issue' }), 
+      const mockFetch8 = async () => new Response(
+        JSON.stringify({ message: 'You do not have permission to view this issue' }),
         { status: 403 }
       );
+      mockFetch8.preconnect = async () => {}; // Add dummy preconnect
+      global.fetch = mockFetch8;
 
       await expect(service.getIssueWithComments(issueId)).rejects.toThrow(
         'JIRA API Error: You do not have permission to view this issue'

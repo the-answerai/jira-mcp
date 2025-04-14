@@ -19,14 +19,6 @@ export class JiraApiService {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
 
-      // Handle 404 for issue endpoints
-      if (response.status === 404 && url?.includes('/issue/')) {
-        const match = url.match(/\/issue\/([^/]+)/);
-        if (match) {
-          throw new Error(`Issue not found: ${match[1]}`);
-        }
-      }
-
       // Extract error message from response with more details
       const message = errorData?.message || errorData?.errorMessage || response.statusText;
       const details = JSON.stringify(errorData, null, 2);
@@ -284,10 +276,23 @@ export class JiraApiService {
       expand: 'names,renderedFields'
     });
 
-    const [issueData, commentsData] = await Promise.all([
-      this.fetchJson<any>(`/rest/api/3/issue/${issueId}?${params}`),
-      this.fetchJson<any>(`/rest/api/3/issue/${issueId}/comment`)
-    ]);
+    let issueData, commentsData;
+    try {
+      [issueData, commentsData] = await Promise.all([
+        this.fetchJson<any>(`/rest/api/3/issue/${issueId}?${params}`),
+        this.fetchJson<any>(`/rest/api/3/issue/${issueId}/comment`)
+      ]);
+    } catch (error: any) {
+      // Check if the error is the specific 404 for the main issue fetch
+      if (error instanceof Error && error.message.includes('(Status: 404)')) {
+         // Check if the error message contains the generic 404 status text we expect from handleFetchError
+         // This indicates the primary issue fetch failed with 404
+        throw new Error(`Issue not found: ${issueId}`);
+      }
+      // Re-throw other errors
+      throw error;
+    }
+
 
     const issue = this.cleanIssue(issueData);
     const comments = commentsData.comments.map((comment: any) =>
