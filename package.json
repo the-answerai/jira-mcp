@@ -4,8 +4,8 @@
   "description": "JIRA MCP Server",
   "type": "module",
   "scripts": {
-    "build": "vite build && chmod +x dist/index.js",
-    "start": "bun dist/index.js",
+    "build": "vite build && chmod +x build/index.js",
+    "start": "bun build/index.js",
     "dev": "vite",
     "test": "bun test",
     "test:watch": "bun test --watch"

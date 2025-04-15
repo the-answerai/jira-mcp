@@ -4,7 +4,7 @@ export interface CleanComment {
   author: string | undefined;
   created: string;
   updated: string;
-  mentions: NonNullable<CleanJiraIssue['relatedIssues']>;
+  mentions: NonNullable<CleanJiraIssue["relatedIssues"]>;
 }
 
 export interface CleanJiraIssue {
@@ -34,9 +34,9 @@ export interface CleanJiraIssue {
   relatedIssues: {
     key: string;
     summary?: string;
-    type: 'mention' | 'link';
+    type: "mention" | "link";
     relationship?: string; // For formal issue links e.g. "blocks", "relates to"
-    source: 'description' | 'comment';
+    source: "description" | "comment";
     commentId?: string;
   }[];
 }
@@ -49,11 +49,11 @@ export interface SearchIssuesResponse {
 // Basic Atlassian Document Format (ADF) structure for a simple paragraph
 export interface AdfDoc {
   version: 1;
-  type: 'doc';
+  type: "doc";
   content: AdfNode[];
 }
 
-export type AdfNodeType = 'paragraph' | 'text'; // Add other types as needed
+export type AdfNodeType = "paragraph" | "text"; // Add other types as needed
 
 export interface AdfNode {
   type: AdfNodeType;

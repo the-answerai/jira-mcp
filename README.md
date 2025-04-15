@@ -32,12 +32,14 @@ JIRA_USER_EMAIL=your_email
 ## Installation & Setup
 
 ### 1. Clone the repository:
+
 ```bash
 git clone [repository-url]
 cd jira-mcp
 ```
 
 ### 2. Install dependencies and build:
+
 ```bash
 bun install
 bun run build
@@ -48,18 +50,22 @@ bun run build
 Edit the appropriate configuration file:
 
 **macOS:**
+
 - Cline: `~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`
 - Claude Desktop: `~/Library/Application Support/Claude/claude_desktop_config.json`
 
 **Windows:**
+
 - Cline: `%APPDATA%\Code\User\globalStorage\saoudrizwan.claude-dev\settings\cline_mcp_settings.json`
 - Claude Desktop: `%APPDATA%\Claude Desktop\claude_desktop_config.json`
 
 **Linux:**
+
 - Cline: `~/.config/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`
 - Claude Desktop: _sadly doesn't exist yet_
 
 Add the following configuration under the `mcpServers` object:
+
 ```json
 {
   "mcpServers": {
@@ -77,21 +83,25 @@ Add the following configuration under the `mcpServers` object:
 ```
 
 ### 4. Restart the MCP server.
+
 Within Cline's MCP settings, restart the MCP server. Restart Claude Desktop to load the new MCP server.
 
 ## Development
 
 Run tests:
+
 ```bash
 bun test
 ```
 
 Watch mode for development:
+
 ```bash
 bun run dev
 ```
 
 To rebuild after changes:
+
 ```bash
 bun run build
 ```
@@ -99,39 +109,47 @@ bun run build
 ## Available MCP Tools
 
 ### search_issues
+
 Search JIRA issues using JQL. Returns up to 50 results per request.
 
 Input Schema:
+
 ```typescript
 {
-  searchString: string // JQL search string
+  searchString: string; // JQL search string
 }
 ```
 
 ### get_epic_children
+
 Get all child issues in an epic including their comments and relationship data. Limited to 100 issues per request.
 
 Input Schema:
+
 ```typescript
 {
-  epicKey: string // The key of the epic issue
+  epicKey: string; // The key of the epic issue
 }
 ```
 
 ### get_issue
+
 Get detailed information about a specific JIRA issue including comments and all relationships.
 
 Input Schema:
+
 ```typescript
 {
-  issueId: string // The ID or key of the JIRA issue
+  issueId: string; // The ID or key of the JIRA issue
 }
 ```
 
 ### create_issue
+
 Create a new JIRA issue with specified fields.
 
 Input Schema:
+
 ```typescript
 {
   projectKey: string, // The project key where the issue will be created
@@ -145,9 +163,11 @@ Input Schema:
 ```
 
 ### update_issue
+
 Update fields of an existing JIRA issue.
 
 Input Schema:
+
 ```typescript
 {
   issueKey: string, // The key of the issue to update
@@ -158,9 +178,11 @@ Input Schema:
 ```
 
 ### add_attachment
+
 Add a file attachment to a JIRA issue.
 
 Input Schema:
+
 ```typescript
 {
   issueKey: string, // The key of the issue
@@ -170,9 +192,11 @@ Input Schema:
 ```
 
 ### add_comment
+
 Add a comment to a JIRA issue. Accepts plain text and converts it to the required Atlassian Document Format internally.
 
 Input Schema:
+
 ```typescript
 {
   issueIdOrKey: string, // The ID or key of the issue to add the comment to
