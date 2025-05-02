@@ -1,6 +1,6 @@
 {
   "name": "jira-mcp",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "JIRA MCP Server for AI-powered integration with JIRA via the Model Context Protocol",
   "type": "module",
   "scripts": {
