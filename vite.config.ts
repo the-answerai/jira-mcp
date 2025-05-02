@@ -1,13 +1,17 @@
 import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
-import { resolve } from "path";
+import { resolve } from "node:path";
 
 export default defineConfig({
   build: {
     lib: {
-      entry: resolve(__dirname, "src/index.ts"),
+      // Build both the main server and the check-setup script
+      entry: {
+        index: resolve(__dirname, "src/index.ts"),
+        "scripts/check-setup": resolve(__dirname, "src/scripts/check-setup.ts"),
+      },
       formats: ["es"],
-      fileName: "index",
+      fileName: (format, entryName) => `${entryName}.js`,
     },
     rollupOptions: {
       // Match external array from linear-mcp

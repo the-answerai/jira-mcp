@@ -1,0 +1,173 @@
+name: Publish NPM Package
+
+on:
+  release:
+    types: [created]
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Package version override (optional)'
+        required: false
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          registry-url: 'https://registry.npmjs.org'
+          scope: '@mcps'
+
+      - name: Install dependencies
+        run: npm install -g pnpm && pnpm install
+      
+      - name: Setup Git
+        if: github.event_name == 'push'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Determine version bump
+        if: github.event_name == 'push'
+        id: bump
+        run: |
+          # Get commit messages since last tag
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "Last tag: $LAST_TAG"
+          
+          # Check commit messages for keywords
+          COMMITS=$(git log --pretty=format:"%s" $LAST_TAG..HEAD)
+          echo "Commits since last tag:"
+          echo "$COMMITS"
+          
+          # Determine version bump type
+          BUMP_TYPE="patch"
+          echo "$COMMITS" | grep -i -E '\b(BREAKING|MAJOR)\b' > /dev/null && BUMP_TYPE="major"
+          if [ "$BUMP_TYPE" == "patch" ]; then
+            echo "$COMMITS" | grep -i -E '\b(feat|feature|minor)\b' > /dev/null && BUMP_TYPE="minor"
+          fi
+          
+          echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
+          echo "Determined version bump: $BUMP_TYPE"
+
+      - name: Bump version
+        if: github.event_name == 'push'
+        id: version
+        run: |
+          # Bump version based on commit messages
+          BUMP_TYPE="${{ steps.bump.outputs.bump_type }}"
+          npm version $BUMP_TYPE --no-git-tag-version
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+
+      - name: Update package name and version
+        run: |
+          PACKAGE_VERSION=""
+          if [ "${{ github.event.inputs.version }}" != "" ]; then
+            PACKAGE_VERSION="${{ github.event.inputs.version }}"
+          elif [ "${{ github.event.release.tag_name }}" != "" ]; then
+            PACKAGE_VERSION="${{ github.event.release.tag_name }}"
+            # Remove 'v' prefix if present
+            PACKAGE_VERSION="${PACKAGE_VERSION#v}"
+          elif [ "${{ github.event_name }}" == "push" ]; then
+            PACKAGE_VERSION="${{ steps.version.outputs.new_version }}"
+          fi
+          
+          if [ "$PACKAGE_VERSION" != "" ]; then
+            # Update package.json with new version if provided
+            npm version $PACKAGE_VERSION --no-git-tag-version
+            echo "Publishing version: $PACKAGE_VERSION"
+          fi
+          
+          # Update package name to scoped name
+          node -e "const pkg = require('./package.json'); pkg.name = '@mcps/jira'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
+          
+          # Update package.json to include publishConfig
+          node -e "const pkg = require('./package.json'); pkg.publishConfig = { access: 'public' }; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
+          
+          # Update package.json to include repository
+          node -e "const pkg = require('./package.json'); pkg.repository = { type: 'git', url: 'git+https://github.com/bradtaylor/jira-mcp.git' }; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
+          
+          # Update binary field for CLI usage
+          node -e "const pkg = require('./package.json'); pkg.bin = { 'mcps-jira': './build/index.js', 'mcps-jira-check': './build/scripts/check-setup.js' }; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
+
+      - name: Build the package
+        run: pnpm run build
+
+      - name: Update README for npm
+        run: |
+          echo "# JIRA MCP Server" > npm-readme.md
+          echo "" >> npm-readme.md
+          echo "A Model Context Protocol (MCP) server implementation that provides access to JIRA data with relationship tracking, optimized data payloads, and data cleaning for AI context windows." >> npm-readme.md
+          echo "" >> npm-readme.md
+          echo "## Installation" >> npm-readme.md
+          echo "" >> npm-readme.md
+          echo "\`\`\`bash" >> npm-readme.md
+          echo "npm install -g @mcps/jira" >> npm-readme.md
+          echo "\`\`\`" >> npm-readme.md
+          echo "" >> npm-readme.md
+          echo "## Usage" >> npm-readme.md
+          echo "" >> npm-readme.md
+          echo "### With Claude Desktop or Cline" >> npm-readme.md
+          echo "" >> npm-readme.md
+          echo "\`\`\`json" >> npm-readme.md
+          echo "{" >> npm-readme.md
+          echo "  \"mcpServers\": {" >> npm-readme.md
+          echo "    \"jira\": {" >> npm-readme.md
+          echo "      \"command\": \"mcps-jira\"," >> npm-readme.md
+          echo "      \"env\": {" >> npm-readme.md
+          echo "        \"JIRA_API_TOKEN\": \"your_api_token\"," >> npm-readme.md
+          echo "        \"JIRA_BASE_URL\": \"your_jira_instance_url\"," >> npm-readme.md
+          echo "        \"JIRA_USER_EMAIL\": \"your_email\"" >> npm-readme.md
+          echo "      }" >> npm-readme.md
+          echo "    }" >> npm-readme.md
+          echo "  }" >> npm-readme.md
+          echo "}" >> npm-readme.md
+          echo "\`\`\`" >> npm-readme.md
+          echo "" >> npm-readme.md
+          echo "For more detailed documentation, please visit the [GitHub repository](https://github.com/bradtaylor/jira-mcp)." >> npm-readme.md
+          mv npm-readme.md README.md
+
+      - name: Publish to npm
+        run: pnpm publish --no-git-tags --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          
+      - name: Publish to GitHub Packages
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@bradtaylor'
+      
+      - name: Update package name for GitHub Packages
+        run: |
+          node -e "const pkg = require('./package.json'); pkg.name = '@bradtaylor/jira-mcp'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
+      
+      - name: Publish to GitHub Packages
+        run: pnpm publish --no-git-tags --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Create Git Tag
+        if: github.event_name == 'push'
+        run: |
+          NEW_VERSION="v${{ steps.version.outputs.new_version }}"
+          git tag -a $NEW_VERSION -m "Release $NEW_VERSION"
+          git push origin $NEW_VERSION 

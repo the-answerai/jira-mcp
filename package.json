@@ -1,7 +1,7 @@
 {
   "name": "jira-mcp",
   "version": "1.0.0",
-  "description": "JIRA MCP Server",
+  "description": "JIRA MCP Server for AI-powered integration with JIRA via the Model Context Protocol",
   "type": "module",
   "scripts": {
     "build": "vite build && chmod +x build/index.js",
@@ -9,16 +9,34 @@
     "dev": "vite",
     "test": "jest --config=jest.config.cjs src/services/__tests__/basic.test.ts",
     "test:watch": "jest --config=jest.config.cjs --watch",
-    "test:all": "jest --config=jest.config.cjs"
+    "test:all": "jest --config=jest.config.cjs",
+    "check-setup": "node build/scripts/check-setup.js"
+  },
+  "bin": {
+    "mcps-jira": "./build/index.js",
+    "mcps-jira-check": "./build/scripts/check-setup.js"
   },
   "keywords": [
     "mcp",
     "jira",
     "typescript",
-    "node"
+    "node",
+    "model-context-protocol",
+    "ai",
+    "claude",
+    "anthropic",
+    "atlassian"
   ],
-  "author": "Dimosthenis Kaponis",
+  "author": "Brad Taylor",
   "license": "MIT",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "files": [
+    "build"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.9.0",
     "typescript": "^5.8.3"
