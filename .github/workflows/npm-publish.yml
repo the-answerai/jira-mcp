@@ -179,22 +179,6 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           
-      - name: Publish to GitHub Packages
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18.x'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@bradtaylor'
-      
-      - name: Update package name for GitHub Packages
-        run: |
-          node -e "const pkg = require('./package.json'); pkg.name = '@bradtaylor/jira-mcp'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
-      
-      - name: Publish to GitHub Packages
-        run: pnpm publish --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
       - name: Create Git Tag
         if: github.event_name == 'push'
         run: |
