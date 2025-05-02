@@ -51,7 +51,7 @@ The GitHub Actions workflow automates the following:
 1. Checks out the repository code
 2. Sets up Node.js and pnpm
 3. Updates the package.json with the following changes:
-   - Renames the package to `@answerai/jira-mcp` for npm and `@bradtaylor/jira-mcp` for GitHub Packages
+   - Renames the package to `@answerai/jira-mcp` for npm
    - Sets the version based on commit messages, release tag, or manually specified version
    - Adds `publishConfig` to make the package public
    - Updates repository information
@@ -59,8 +59,7 @@ The GitHub Actions workflow automates the following:
 4. Builds the project
 5. Creates a simplified README for the npm package
 6. Publishes to npm Registry
-7. Publishes to GitHub Packages
-8. Creates a git tag for the new version (for push to main/master)
+7. Creates a git tag for the new version (for push to main/master)
 
 ## Installing and Using the Published Package
 
@@ -70,13 +69,71 @@ After publishing, users can install the package globally:
 npm install -g @answerai/jira-mcp
 ```
 
-Then configure their Claude Desktop or Cline client with:
+Then configure their Claude client with one of the following options:
+
+### Claude Desktop
 
 ```json
 {
   "mcpServers": {
     "jira": {
       "command": "answerai-jira-mcp",
+      "env": {
+        "JIRA_API_TOKEN": "your_api_token",
+        "JIRA_BASE_URL": "your_jira_instance_url",
+        "JIRA_USER_EMAIL": "your_email"
+      }
+    }
+  }
+}
+```
+
+### Cline (VS Code extension)
+
+```json
+{
+  "mcpServers": {
+    "jira": {
+      "command": "answerai-jira-mcp",
+      "env": {
+        "JIRA_API_TOKEN": "your_api_token",
+        "JIRA_BASE_URL": "your_jira_instance_url",
+        "JIRA_USER_EMAIL": "your_email"
+      }
+    }
+  }
+}
+```
+
+### Cursor
+
+#### With globally installed package:
+
+```json
+{
+  "mcpServers": {
+    "jira": {
+      "command": "answerai-jira-mcp",
+      "env": {
+        "JIRA_API_TOKEN": "your_api_token",
+        "JIRA_BASE_URL": "your_jira_instance_url",
+        "JIRA_USER_EMAIL": "your_email"
+      }
+    }
+  }
+}
+```
+
+#### For local development:
+
+```json
+{
+  "mcpServers": {
+    "jira": {
+      "command": "node",
+      "args": [
+        "/path/to/your/jira-mcp/build/index.js"
+      ],
       "env": {
         "JIRA_API_TOKEN": "your_api_token",
         "JIRA_BASE_URL": "your_jira_instance_url",

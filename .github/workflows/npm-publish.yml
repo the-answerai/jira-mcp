@@ -132,7 +132,7 @@ jobs:
           node -e "const pkg = require('./package.json'); pkg.publishConfig = { access: 'public' }; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
           
           # Update package.json to include repository
-          node -e "const pkg = require('./package.json'); pkg.repository = { type: 'git', url: 'git+https://github.com/bradtaylor/jira-mcp.git' }; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
+          node -e "const pkg = require('./package.json'); pkg.repository = { type: 'git', url: 'git+https://github.com/the-answerai/jira-mcp.git' }; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
           
           # Update binary field for CLI usage
           node -e "const pkg = require('./package.json'); pkg.bin = { 'answerai-jira-mcp': './build/index.js', 'answerai-jira-mcp-check': './build/scripts/check-setup.js' }; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
@@ -171,7 +171,7 @@ jobs:
           echo "}" >> npm-readme.md
           echo "\`\`\`" >> npm-readme.md
           echo "" >> npm-readme.md
-          echo "For more detailed documentation, please visit the [GitHub repository](https://github.com/bradtaylor/jira-mcp)." >> npm-readme.md
+          echo "For more detailed documentation, please visit the [GitHub repository](https://github.com/the-answerai/jira-mcp)." >> npm-readme.md
           mv npm-readme.md README.md
 
       - name: Publish to npm

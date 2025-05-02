@@ -20,7 +20,7 @@ npm install -g @answerai/jira-mcp
 4. Give your token a name (e.g., "MCP JIRA Integration")
 5. Copy the token value (you won't be able to see it again)
 
-### 2. Configure Claude Desktop or Cline
+### 2. Configure Claude Desktop, Cline, or Cursor
 
 #### Claude Desktop
 
@@ -67,10 +67,54 @@ Add the following to your Cline configuration file:
 }
 ```
 
+#### Cursor
+
+Add the following to your Cursor configuration file:
+
+**macOS**: `~/.cursor/mcp.json`  
+**Windows**: `%USERPROFILE%\.cursor\mcp.json`  
+**Linux**: `~/.cursor/mcp.json`
+
+For the globally installed package:
+```json
+{
+  "mcpServers": {
+    "jira": {
+      "command": "answerai-jira-mcp",
+      "env": {
+        "JIRA_API_TOKEN": "your_api_token",
+        "JIRA_BASE_URL": "your_jira_instance_url",
+        "JIRA_USER_EMAIL": "your_email"
+      }
+    }
+  }
+}
+```
+
+For a local development setup:
+```json
+{
+  "mcpServers": {
+    "jira": {
+      "command": "node",
+      "args": [
+        "/path/to/your/jira-mcp/build/index.js"
+      ],
+      "env": {
+        "JIRA_API_TOKEN": "your_api_token",
+        "JIRA_BASE_URL": "your_jira_instance_url",
+        "JIRA_USER_EMAIL": "your_email"
+      }
+    }
+  }
+}
+```
+
 Replace the following values:
 - `your_api_token`: Your JIRA API token
 - `your_jira_instance_url`: Your JIRA instance URL (e.g., `https://your-domain.atlassian.net`)
 - `your_email`: The email associated with your JIRA account
+- `/path/to/your/jira-mcp/build/index.js`: The absolute path to the built index.js file (if using the local development setup)
 
 ### 3. Verify Your Setup
 
@@ -82,9 +126,9 @@ answerai-jira-mcp-check
 
 This will check if your environment variables are set correctly and test your connection to JIRA.
 
-### 4. Restart Claude or Cline
+### 4. Restart Your Claude Client
 
-After configuration, restart Claude Desktop or VS Code (for Cline) to load the updated MCP configuration.
+After configuration, restart Claude Desktop, VS Code (for Cline), or Cursor to load the updated MCP configuration.
 
 ## Available Tools
 
@@ -181,5 +225,5 @@ For detailed logs, check the Claude or Cline application logs.
 If you need further assistance:
 
 1. Check the GitHub repository for updates or known issues
-2. Open an issue on the GitHub repository
+2. Open an issue on the GitHub repository at https://github.com/the-answerai/jira-mcp
 3. Contact the maintainer via GitHub 
