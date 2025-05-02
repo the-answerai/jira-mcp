@@ -180,9 +180,10 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           
       - name: Create Git Tag
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && steps.version.outputs.new_version != ''
         run: |
           NEW_VERSION="v${{ steps.version.outputs.new_version }}"
+          echo "Creating tag $NEW_VERSION"
           if ! git tag -l | grep -q "^$NEW_VERSION$"; then
             git tag -a $NEW_VERSION -m "Release $NEW_VERSION"
             git push origin $NEW_VERSION
