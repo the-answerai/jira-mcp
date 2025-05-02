@@ -46,20 +46,36 @@ jobs:
         if: github.event_name == 'push'
         id: bump
         run: |
-          # Get commit messages since last tag
-          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          echo "Last tag: $LAST_TAG"
-          
-          # Check commit messages for keywords
-          COMMITS=$(git log --pretty=format:"%s" $LAST_TAG..HEAD)
-          echo "Commits since last tag:"
-          echo "$COMMITS"
-          
-          # Determine version bump type
-          BUMP_TYPE="patch"
-          echo "$COMMITS" | grep -i -E '\b(BREAKING|MAJOR)\b' > /dev/null && BUMP_TYPE="major"
-          if [ "$BUMP_TYPE" == "patch" ]; then
-            echo "$COMMITS" | grep -i -E '\b(feat|feature|minor)\b' > /dev/null && BUMP_TYPE="minor"
+          # Check if there are any tags
+          if git tag -l | grep -q .; then
+            # Get commit messages since last tag
+            LAST_TAG=$(git describe --tags --abbrev=0)
+            echo "Last tag: $LAST_TAG"
+            
+            # Check commit messages for keywords
+            COMMITS=$(git log --pretty=format:"%s" $LAST_TAG..HEAD)
+            echo "Commits since last tag:"
+            echo "$COMMITS"
+            
+            # Determine version bump type
+            BUMP_TYPE="patch"
+            echo "$COMMITS" | grep -i -E '\b(BREAKING|MAJOR)\b' > /dev/null && BUMP_TYPE="major"
+            if [ "$BUMP_TYPE" == "patch" ]; then
+              echo "$COMMITS" | grep -i -E '\b(feat|feature|minor)\b' > /dev/null && BUMP_TYPE="minor"
+            fi
+          else
+            echo "No tags found. This is the first version."
+            # Get all commit messages
+            COMMITS=$(git log --pretty=format:"%s")
+            echo "All commits:"
+            echo "$COMMITS"
+            
+            # Determine version bump type based on all commits
+            BUMP_TYPE="patch"
+            echo "$COMMITS" | grep -i -E '\b(BREAKING|MAJOR)\b' > /dev/null && BUMP_TYPE="major"
+            if [ "$BUMP_TYPE" == "patch" ]; then
+              echo "$COMMITS" | grep -i -E '\b(feat|feature|minor)\b' > /dev/null && BUMP_TYPE="minor"
+            fi
           fi
           
           echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
