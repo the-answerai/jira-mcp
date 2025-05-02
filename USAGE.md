@@ -7,7 +7,7 @@ This document explains how to use the JIRA MCP Server after installing it from n
 Install the package globally:
 
 ```bash
-npm install -g @mcps/jira
+npm install -g @answerai/jira-mcp
 ```
 
 ## Configuration
@@ -33,7 +33,7 @@ Add the following to your Claude Desktop configuration file:
 {
   "mcpServers": {
     "jira": {
-      "command": "mcps-jira",
+      "command": "answerai-jira-mcp",
       "env": {
         "JIRA_API_TOKEN": "your_api_token",
         "JIRA_BASE_URL": "your_jira_instance_url",
@@ -56,7 +56,7 @@ Add the following to your Cline configuration file:
 {
   "mcpServers": {
     "jira": {
-      "command": "mcps-jira",
+      "command": "answerai-jira-mcp",
       "env": {
         "JIRA_API_TOKEN": "your_api_token",
         "JIRA_BASE_URL": "your_jira_instance_url",
@@ -77,7 +77,7 @@ Replace the following values:
 Verify your setup by running:
 
 ```bash
-mcps-jira-check
+answerai-jira-mcp-check
 ```
 
 This will check if your environment variables are set correctly and test your connection to JIRA.

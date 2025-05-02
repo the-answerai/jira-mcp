@@ -51,7 +51,7 @@ The GitHub Actions workflow automates the following:
 1. Checks out the repository code
 2. Sets up Node.js and pnpm
 3. Updates the package.json with the following changes:
-   - Renames the package to `@mcps/jira` for npm and `@bradtaylor/jira-mcp` for GitHub Packages
+   - Renames the package to `@answerai/jira-mcp` for npm and `@bradtaylor/jira-mcp` for GitHub Packages
    - Sets the version based on commit messages, release tag, or manually specified version
    - Adds `publishConfig` to make the package public
    - Updates repository information
@@ -67,7 +67,7 @@ The GitHub Actions workflow automates the following:
 After publishing, users can install the package globally:
 
 ```bash
-npm install -g @mcps/jira
+npm install -g @answerai/jira-mcp
 ```
 
 Then configure their Claude Desktop or Cline client with:
@@ -76,7 +76,7 @@ Then configure their Claude Desktop or Cline client with:
 {
   "mcpServers": {
     "jira": {
-      "command": "mcps-jira",
+      "command": "answerai-jira-mcp",
       "env": {
         "JIRA_API_TOKEN": "your_api_token",
         "JIRA_BASE_URL": "your_jira_instance_url",

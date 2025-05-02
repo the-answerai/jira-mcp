@@ -31,7 +31,7 @@ jobs:
         with:
           node-version: '18.x'
           registry-url: 'https://registry.npmjs.org'
-          scope: '@mcps'
+          scope: '@answerai'
 
       - name: Install dependencies
         run: npm install -g pnpm && pnpm install
@@ -126,7 +126,7 @@ jobs:
           fi
           
           # Update package name to scoped name
-          node -e "const pkg = require('./package.json'); pkg.name = '@mcps/jira'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
+          node -e "const pkg = require('./package.json'); pkg.name = '@answerai/jira-mcp'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
           
           # Update package.json to include publishConfig
           node -e "const pkg = require('./package.json'); pkg.publishConfig = { access: 'public' }; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
@@ -135,7 +135,7 @@ jobs:
           node -e "const pkg = require('./package.json'); pkg.repository = { type: 'git', url: 'git+https://github.com/bradtaylor/jira-mcp.git' }; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
           
           # Update binary field for CLI usage
-          node -e "const pkg = require('./package.json'); pkg.bin = { 'mcps-jira': './build/index.js', 'mcps-jira-check': './build/scripts/check-setup.js' }; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
+          node -e "const pkg = require('./package.json'); pkg.bin = { 'answerai-jira-mcp': './build/index.js', 'answerai-jira-mcp-check': './build/scripts/check-setup.js' }; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
 
       - name: Build the package
         run: pnpm run build
@@ -149,7 +149,7 @@ jobs:
           echo "## Installation" >> npm-readme.md
           echo "" >> npm-readme.md
           echo "\`\`\`bash" >> npm-readme.md
-          echo "npm install -g @mcps/jira" >> npm-readme.md
+          echo "npm install -g @answerai/jira-mcp" >> npm-readme.md
           echo "\`\`\`" >> npm-readme.md
           echo "" >> npm-readme.md
           echo "## Usage" >> npm-readme.md
@@ -160,7 +160,7 @@ jobs:
           echo "{" >> npm-readme.md
           echo "  \"mcpServers\": {" >> npm-readme.md
           echo "    \"jira\": {" >> npm-readme.md
-          echo "      \"command\": \"mcps-jira\"," >> npm-readme.md
+          echo "      \"command\": \"answerai-jira-mcp\"," >> npm-readme.md
           echo "      \"env\": {" >> npm-readme.md
           echo "        \"JIRA_API_TOKEN\": \"your_api_token\"," >> npm-readme.md
           echo "        \"JIRA_BASE_URL\": \"your_jira_instance_url\"," >> npm-readme.md
