@@ -175,7 +175,7 @@ jobs:
           mv npm-readme.md README.md
 
       - name: Publish to npm
-        run: pnpm publish --no-git-tags --no-git-checks
+        run: pnpm publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           
@@ -191,7 +191,7 @@ jobs:
           node -e "const pkg = require('./package.json'); pkg.name = '@bradtaylor/jira-mcp'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
       
       - name: Publish to GitHub Packages
-        run: pnpm publish --no-git-tags --no-git-checks
+        run: pnpm publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
