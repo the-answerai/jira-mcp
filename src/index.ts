@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 import { Server } from "@modelcontextprotocol/sdk/server/index.js"; // Use base Server
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -9,21 +9,15 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { JiraApiService } from "./services/jira-api.js";
 
-declare module "bun" {
-  interface Env {
-    JIRA_API_TOKEN: string;
-    JIRA_BASE_URL: string;
-    JIRA_USER_EMAIL: string;
-  }
-}
-
-const JIRA_API_TOKEN = process.env.JIRA_API_TOKEN;
-const JIRA_BASE_URL = process.env.JIRA_BASE_URL;
-const JIRA_USER_EMAIL = process.env.JIRA_USER_EMAIL;
+// Replaced Bun type declaration with standard process.env declaration
+// TypeScript will still provide type checking for these environment variables
+const JIRA_API_TOKEN = process.env.JIRA_API_TOKEN as string;
+const JIRA_BASE_URL = process.env.JIRA_BASE_URL as string;
+const JIRA_USER_EMAIL = process.env.JIRA_USER_EMAIL as string;
 
 if (!JIRA_API_TOKEN || !JIRA_BASE_URL || !JIRA_USER_EMAIL) {
   throw new Error(
-    "JIRA_API_TOKEN, JIRA_USER_EMAIL and JIRA_BASE_URL environment variables are required",
+    "JIRA_API_TOKEN, JIRA_USER_EMAIL and JIRA_BASE_URL environment variables are required"
   );
 }
 
@@ -41,13 +35,13 @@ class JiraServer {
         capabilities: {
           tools: {},
         },
-      },
+      }
     );
 
     this.jiraApi = new JiraApiService(
       JIRA_BASE_URL,
       JIRA_USER_EMAIL,
-      JIRA_API_TOKEN,
+      JIRA_API_TOKEN
     );
 
     this.setupToolHandlers();
@@ -248,14 +242,14 @@ class JiraServer {
 
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       try {
-        const args = request.params.arguments as Record<string, any>;
+        const args = request.params.arguments as Record<string, unknown>;
 
         switch (request.params.name) {
           case "search_issues": {
             if (!args.searchString || typeof args.searchString !== "string") {
               throw new McpError(
                 ErrorCode.InvalidParams,
-                "Search string is required",
+                "Search string is required"
               );
             }
             const response = await this.jiraApi.searchIssues(args.searchString);
@@ -269,7 +263,7 @@ class JiraServer {
             if (!args.epicKey || typeof args.epicKey !== "string") {
               throw new McpError(
                 ErrorCode.InvalidParams,
-                "Epic key is required",
+                "Epic key is required"
               );
             }
             const response = await this.jiraApi.getEpicChildren(args.epicKey);
@@ -283,11 +277,11 @@ class JiraServer {
             if (!args.issueId || typeof args.issueId !== "string") {
               throw new McpError(
                 ErrorCode.InvalidParams,
-                "Issue ID is required",
+                "Issue ID is required"
               );
             }
             const response = await this.jiraApi.getIssueWithComments(
-              args.issueId,
+              args.issueId
             );
             return {
               content: [
@@ -307,7 +301,7 @@ class JiraServer {
             ) {
               throw new McpError(
                 ErrorCode.InvalidParams,
-                "projectKey, issueType, and summary are required",
+                "projectKey, issueType, and summary are required"
               );
             }
             const response = await this.jiraApi.createIssue(
@@ -315,7 +309,7 @@ class JiraServer {
               args.issueType,
               args.summary,
               args.description as string | undefined,
-              args.fields as Record<string, any> | undefined,
+              args.fields as Record<string, unknown> | undefined
             );
             return {
               content: [
@@ -332,7 +326,7 @@ class JiraServer {
             ) {
               throw new McpError(
                 ErrorCode.InvalidParams,
-                "issueKey and fields object are required",
+                "issueKey and fields object are required"
               );
             }
             await this.jiraApi.updateIssue(args.issueKey, args.fields);
@@ -343,7 +337,7 @@ class JiraServer {
                   text: JSON.stringify(
                     { message: `Issue ${args.issueKey} updated successfully` },
                     null,
-                    2,
+                    2
                   ),
                 },
               ],
@@ -353,7 +347,7 @@ class JiraServer {
             if (!args.issueKey || typeof args.issueKey !== "string") {
               throw new McpError(
                 ErrorCode.InvalidParams,
-                "Issue key is required",
+                "Issue key is required"
               );
             }
             const response = await this.jiraApi.getTransitions(args.issueKey);
@@ -372,13 +366,13 @@ class JiraServer {
             ) {
               throw new McpError(
                 ErrorCode.InvalidParams,
-                "issueKey and transitionId are required",
+                "issueKey and transitionId are required"
               );
             }
             await this.jiraApi.transitionIssue(
               args.issueKey,
               args.transitionId,
-              args.comment as string | undefined,
+              args.comment as string | undefined
             );
             return {
               content: [
@@ -386,10 +380,14 @@ class JiraServer {
                   type: "text",
                   text: JSON.stringify(
                     {
-                      message: `Issue ${args.issueKey} transitioned successfully${args.comment ? " with comment" : ""}`,
+                      message: `Issue ${
+                        args.issueKey
+                      } transitioned successfully${
+                        args.comment ? " with comment" : ""
+                      }`,
                     },
                     null,
-                    2,
+                    2
                   ),
                 },
               ],
@@ -406,14 +404,14 @@ class JiraServer {
             ) {
               throw new McpError(
                 ErrorCode.InvalidParams,
-                "issueKey, fileContent, and filename are required",
+                "issueKey, fileContent, and filename are required"
               );
             }
             const fileBuffer = Buffer.from(args.fileContent, "base64");
             const result = await this.jiraApi.addAttachment(
               args.issueKey,
               fileBuffer,
-              args.filename,
+              args.filename
             );
             return {
               content: [
@@ -426,7 +424,7 @@ class JiraServer {
                       filename: result.filename,
                     },
                     null,
-                    2,
+                    2
                   ),
                 },
               ],
@@ -441,12 +439,12 @@ class JiraServer {
             ) {
               throw new McpError(
                 ErrorCode.InvalidParams,
-                "issueIdOrKey and body are required",
+                "issueIdOrKey and body are required"
               );
             }
             const response = await this.jiraApi.addCommentToIssue(
               args.issueIdOrKey,
-              args.body,
+              args.body
             );
             return {
               content: [
@@ -457,7 +455,7 @@ class JiraServer {
           default:
             throw new McpError(
               ErrorCode.MethodNotFound,
-              `Unknown tool: ${request.params.name}`,
+              `Unknown tool: ${request.params.name}`
             );
         }
       } catch (error) {
@@ -467,7 +465,7 @@ class JiraServer {
         }
         throw new McpError(
           ErrorCode.InternalError,
-          error instanceof Error ? error.message : "Unknown error occurred",
+          error instanceof Error ? error.message : "Unknown error occurred"
         );
       }
     });

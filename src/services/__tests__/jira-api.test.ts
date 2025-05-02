@@ -1,4 +1,4 @@
-import { expect, test, describe, beforeEach, afterEach } from "bun:test";
+import { expect, test, describe, beforeEach, afterEach } from "@jest/globals";
 import { JiraApiService } from "../jira-api.js";
 
 const mockFormattedDescription = {
@@ -34,7 +34,7 @@ describe("JiraApiService", () => {
       const service = new JiraApiService(
         "http://test",
         "test@test.com",
-        "token",
+        "token"
       );
       const result = (service as any).cleanIssue(mockFormattedDescription);
       expect(result.description).toBe("As a user I want to see formatted text");
@@ -61,13 +61,13 @@ describe("JiraApiService", () => {
       // Mock fetch to verify headers
       const mockFetch = async (
         input: RequestInfo | URL,
-        init?: RequestInit,
+        init?: RequestInit
       ) => {
         const url = input.toString();
         expect(url.startsWith(baseUrl)).toBe(true);
         const headers = init?.headers as Headers;
         expect(headers.get("Authorization")).toBe(
-          `Basic ${Buffer.from(`${email}:${apiToken}`).toString("base64")}`,
+          `Basic ${Buffer.from(`${email}:${apiToken}`).toString("base64")}`
         );
         expect(headers.get("Content-Type")).toBe("application/json");
         return new Response(JSON.stringify({ issues: [] }));
@@ -209,13 +209,13 @@ describe("JiraApiService", () => {
       const mockFetch2 = async () =>
         new Response(
           JSON.stringify({ message: "You do not have permission" }),
-          { status: 403 },
+          { status: 403 }
         );
       mockFetch2.preconnect = async () => {}; // Add dummy preconnect
       global.fetch = mockFetch2;
 
       await expect(service.searchIssues("project = TEST")).rejects.toThrow(
-        "JIRA API Error: You do not have permission",
+        "JIRA API Error: You do not have permission"
       );
     });
   });
@@ -282,7 +282,7 @@ describe("JiraApiService", () => {
     };
 
     test("should fetch epic children with comments", async () => {
-      let fetchCount = 0;
+      const fetchCount = 0;
       const mockFetch3 = async (input: RequestInfo | URL) => {
         const url = input.toString();
         if (url.includes("/search")) {
@@ -353,13 +353,13 @@ describe("JiraApiService", () => {
       const mockFetch4 = async () =>
         new Response(
           JSON.stringify({ message: "You do not have permission" }),
-          { status: 403 },
+          { status: 403 }
         );
       mockFetch4.preconnect = async () => {}; // Add dummy preconnect
       global.fetch = mockFetch4;
 
       await expect(service.getEpicChildren(epicKey)).rejects.toThrow(
-        "JIRA API Error: You do not have permission",
+        "JIRA API Error: You do not have permission"
       );
     });
   });
@@ -560,7 +560,7 @@ describe("JiraApiService", () => {
       global.fetch = mockFetch7;
 
       await expect(service.getIssueWithComments(issueId)).rejects.toThrow(
-        `Issue not found: ${issueId}`,
+        `Issue not found: ${issueId}`
       );
     });
 
@@ -570,13 +570,13 @@ describe("JiraApiService", () => {
           JSON.stringify({
             message: "You do not have permission to view this issue",
           }),
-          { status: 403 },
+          { status: 403 }
         );
       mockFetch8.preconnect = async () => {}; // Add dummy preconnect
       global.fetch = mockFetch8;
 
       await expect(service.getIssueWithComments(issueId)).rejects.toThrow(
-        "JIRA API Error: You do not have permission to view this issue",
+        "JIRA API Error: You do not have permission to view this issue"
       );
     });
   });
@@ -619,7 +619,7 @@ describe("JiraApiService", () => {
     test("should send POST request with correct ADF body and return cleaned response on success", async () => {
       const mockFetch = async (
         input: RequestInfo | URL,
-        init?: RequestInit,
+        init?: RequestInit
       ) => {
         const url = input.toString();
         expect(url).toBe(`${baseUrl}/rest/api/3/issue/${issueIdOrKey}/comment`);
@@ -646,15 +646,15 @@ describe("JiraApiService", () => {
               "Issue does not exist or you do not have permission to see it.",
             ],
           }),
-          { status: 404 },
+          { status: 404 }
         );
       mockFetch.preconnect = async () => {};
       global.fetch = mockFetch;
 
       await expect(
-        service.addCommentToIssue(issueIdOrKey, commentBody),
+        service.addCommentToIssue(issueIdOrKey, commentBody)
       ).rejects.toThrow(
-        "JIRA API Error: Issue does not exist or you do not have permission to see it.",
+        "JIRA API Error: Issue does not exist or you do not have permission to see it."
       );
     });
 
@@ -666,15 +666,15 @@ describe("JiraApiService", () => {
               "User does not have permission to comment on this issue.",
             ],
           }),
-          { status: 403 },
+          { status: 403 }
         );
       mockFetch.preconnect = async () => {};
       global.fetch = mockFetch;
 
       await expect(
-        service.addCommentToIssue(issueIdOrKey, commentBody),
+        service.addCommentToIssue(issueIdOrKey, commentBody)
       ).rejects.toThrow(
-        "JIRA API Error: User does not have permission to comment on this issue.",
+        "JIRA API Error: User does not have permission to comment on this issue."
       );
     });
 
@@ -682,13 +682,13 @@ describe("JiraApiService", () => {
       const mockFetch = async () =>
         new Response(
           JSON.stringify({ errorMessages: ["Invalid request body"] }),
-          { status: 400 },
+          { status: 400 }
         );
       mockFetch.preconnect = async () => {};
       global.fetch = mockFetch;
 
       await expect(
-        service.addCommentToIssue(issueIdOrKey, commentBody),
+        service.addCommentToIssue(issueIdOrKey, commentBody)
       ).rejects.toThrow("JIRA API Error: Invalid request body");
     });
   });

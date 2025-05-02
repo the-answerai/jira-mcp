@@ -18,7 +18,8 @@ A Model Context Protocol (MCP) server implementation that provides access to JIR
 
 ## Prerequisites
 
-- [Bun](https://bun.sh) (v1.0.0 or higher)
+- [Node.js](https://nodejs.org/) (v18.0.0 or higher)
+- [pnpm](https://pnpm.io/installation) (v8.0.0 or higher)
 - JIRA account with API access
 
 ## Environment Variables
@@ -41,8 +42,8 @@ cd jira-mcp
 ### 2. Install dependencies and build:
 
 ```bash
-bun install
-bun run build
+pnpm install
+pnpm run build
 ```
 
 ### 3. Configure the MCP server:
@@ -91,19 +92,19 @@ Within Cline's MCP settings, restart the MCP server. Restart Claude Desktop to l
 Run tests:
 
 ```bash
-bun test
+pnpm test
 ```
 
 Watch mode for development:
 
 ```bash
-bun run dev
+pnpm run dev
 ```
 
 To rebuild after changes:
 
 ```bash
-bun run build
+pnpm run build
 ```
 
 ## Available MCP Tools
