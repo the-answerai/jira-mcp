@@ -39,7 +39,6 @@ JIRA_USER_EMAIL=your_email
 
 ```bash
 JIRA_CONNECTION_TYPE=Oauth_2.0
-JIRA_BASE_URL=your_jira_instance_url  # e.g., https://your-domain.atlassian.net
 JIRA_CLIENT_ID=your_oauth_client_id
 JIRA_CLIENT_SECRET=your_oauth_client_secret
 JIRA_REFRESH_TOKEN=your_initial_refresh_token
@@ -53,6 +52,7 @@ JIRA_TOKEN_STORAGE_PATH=/custom/path/to/tokens.json  # Optional, defaults to ~/.
 - On first run, uses `JIRA_REFRESH_TOKEN` from environment to bootstrap the process
 - Subsequently uses stored refresh tokens from filesystem
 - Token storage defaults to `~/.jira-mcp/tokens.json` with secure permissions (600)
+- **No base URL required** - JIRA instance is discovered automatically via cloud ID
 
 ## Installation & Setup
 
@@ -118,7 +118,6 @@ Add the following configuration under the `mcpServers` object:
       "args": ["/absolute/path/to/jira-mcp/build/index.js"],
       "env": {
         "JIRA_CONNECTION_TYPE": "Oauth_2.0",
-        "JIRA_BASE_URL": "your_jira_instance_url",
         "JIRA_CLIENT_ID": "your_oauth_client_id",
         "JIRA_CLIENT_SECRET": "your_oauth_client_secret",
         "JIRA_REFRESH_TOKEN": "your_initial_refresh_token",
@@ -129,7 +128,9 @@ Add the following configuration under the `mcpServers` object:
 }
 ```
 
-**Note**: `JIRA_TOKEN_STORAGE_PATH` is optional and defaults to `~/.jira-mcp/tokens.json`.
+**Notes**: 
+- `JIRA_TOKEN_STORAGE_PATH` is optional and defaults to `~/.jira-mcp/tokens.json`
+- `JIRA_BASE_URL` is not required for OAuth - the JIRA instance is discovered automatically
 
 ### 4. Restart the MCP server.
 

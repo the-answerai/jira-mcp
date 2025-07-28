@@ -15,6 +15,11 @@ export class JiraApiService {
   constructor(baseUrl: string, authStrategy: AuthStrategy) {
     this.baseUrl = baseUrl;
     this.authStrategy = authStrategy;
+    
+    // Validate that base URL is provided for API token authentication
+    if (authStrategy.getType() === "API_TOKEN" && !baseUrl) {
+      throw new Error("Base URL is required for API Token authentication");
+    }
   }
 
   /**

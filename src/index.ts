@@ -24,16 +24,16 @@ const JIRA_CLIENT_SECRET = process.env.JIRA_CLIENT_SECRET as string;
 const JIRA_REFRESH_TOKEN = process.env.JIRA_REFRESH_TOKEN as string;
 const JIRA_TOKEN_STORAGE_PATH = process.env.JIRA_TOKEN_STORAGE_PATH as string;
 
-// Validate base URL is always required
-if (!JIRA_BASE_URL) {
-  throw new Error("JIRA_BASE_URL environment variable is required");
-}
-
 // Validate connection type
 if (!["Api_Token", "Oauth_2.0"].includes(JIRA_CONNECTION_TYPE)) {
   throw new Error(
     `Invalid JIRA_CONNECTION_TYPE: ${JIRA_CONNECTION_TYPE}. Supported values: Api_Token, Oauth_2.0`
   );
+}
+
+// Validate base URL is required for API token authentication
+if (JIRA_CONNECTION_TYPE === "Api_Token" && !JIRA_BASE_URL) {
+  throw new Error("JIRA_BASE_URL environment variable is required for API Token authentication");
 }
 
 class JiraServer {
@@ -64,7 +64,7 @@ class JiraServer {
       tokenStoragePath: JIRA_TOKEN_STORAGE_PATH,
     });
 
-    this.jiraApi = new JiraApiService(JIRA_BASE_URL, authStrategy);
+    this.jiraApi = new JiraApiService(JIRA_BASE_URL || "", authStrategy);
 
     this.setupToolHandlers();
 
