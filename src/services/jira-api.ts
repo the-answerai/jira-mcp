@@ -6,19 +6,26 @@ import {
   JiraCommentResponse,
   AddCommentResponse,
 } from "../types/jira.js";
+import { AuthStrategy } from "../auth/AuthStrategy.js";
 
 export class JiraApiService {
   private baseUrl: string;
-  private headers: Headers;
+  private authStrategy: AuthStrategy;
 
-  constructor(baseUrl: string, email: string, apiToken: string) {
+  constructor(baseUrl: string, authStrategy: AuthStrategy) {
     this.baseUrl = baseUrl;
-    const auth = Buffer.from(`${email}:${apiToken}`).toString("base64");
-    this.headers = new Headers({
-      Authorization: `Basic ${auth}`,
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    });
+    this.authStrategy = authStrategy;
+  }
+
+  /**
+   * Get the appropriate API base URL based on authentication strategy
+   */
+  private async getApiBaseUrl(): Promise<string> {
+    if (this.authStrategy.getType() === "OAUTH_2.0" && this.authStrategy.getCloudId) {
+      const cloudId = await this.authStrategy.getCloudId();
+      return `https://api.atlassian.com/ex/jira/${cloudId}`;
+    }
+    return this.baseUrl;
   }
 
   private async handleFetchError(
@@ -29,26 +36,41 @@ export class JiraApiService {
     if (!response.ok) {
       let message = response.statusText; // Default to status text
       let errorData = {};
+      let responseText = "";
+      
       try {
-        errorData = await response.json();
-        // Check for common JIRA error message structures
-        if (
-          Array.isArray((errorData as any).errorMessages) &&
-          (errorData as any).errorMessages.length > 0
-        ) {
-          message = (errorData as any).errorMessages.join("; ");
-        } else if ((errorData as any).message) {
-          message = (errorData as any).message;
-        } else if ((errorData as any).errorMessage) {
-          message = (errorData as any).errorMessage;
+        responseText = await response.text();
+        
+        // Try to parse as JSON if it looks like JSON
+        if (responseText.trim().startsWith('{') || responseText.trim().startsWith('[')) {
+          errorData = JSON.parse(responseText);
+          // Check for common JIRA error message structures
+          if (
+            Array.isArray((errorData as any).errorMessages) &&
+            (errorData as any).errorMessages.length > 0
+          ) {
+            message = (errorData as any).errorMessages.join("; ");
+          } else if ((errorData as any).message) {
+            message = (errorData as any).message;
+          } else if ((errorData as any).errorMessage) {
+            message = (errorData as any).errorMessage;
+          }
+        } else {
+          // Not JSON, likely HTML error page
+          message = responseText.length > 200 
+            ? `${responseText.substring(0, 200)}...` 
+            : responseText;
         }
       } catch (e) {
         // Ignore JSON parsing errors if the body is not JSON or empty
         console.warn("Could not parse JIRA error response body as JSON.");
+        if (responseText) {
+          message = responseText.length > 200 
+            ? `${responseText.substring(0, 200)}...` 
+            : responseText;
+        }
       }
 
-      const details = JSON.stringify(errorData, null, 2);
-      console.error("JIRA API Error Details:", details);
       // Ensure message is not empty before including it
       const errorMessage = message ? `: ${message}` : "";
       throw new Error(
@@ -235,10 +257,71 @@ export class JiraApiService {
   }
 
   private async fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
-    const response = await fetch(this.baseUrl + url, {
+    return await this.fetchWithRetry(url, init);
+  }
+
+  /**
+   * Fetch with automatic retry on token expiration for OAuth
+   */
+  private async fetchWithRetry<T>(url: string, init?: RequestInit, isRetry: boolean = false): Promise<T> {
+    const baseUrl = await this.getApiBaseUrl();
+    const headers = await this.authStrategy.getAuthHeaders();
+    
+    // Merge any additional headers from init
+    if (init?.headers) {
+      const additionalHeaders = new Headers(init.headers);
+      for (const [key, value] of additionalHeaders.entries()) {
+        headers.set(key, value);
+      }
+    }
+
+    const fullUrl = baseUrl + url;
+
+    const response = await fetch(fullUrl, {
       ...init,
-      headers: this.headers,
+      headers,
     });
+
+    // Handle token expiration for OAuth
+    if (!response.ok && (response.status === 401 || response.status === 403) && !isRetry) {
+      if (this.authStrategy.getType() === "OAUTH_2.0" && "handleTokenExpiration" in this.authStrategy) {
+        try {
+          // Refresh token and get the new access token
+          const newAccessToken = await (this.authStrategy as any).handleTokenExpiration();
+          
+          // Create new headers with the fresh token
+          const newHeaders = new Headers({
+            Authorization: `Bearer ${newAccessToken}`,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          });
+          
+          // Merge any additional headers from init
+          if (init?.headers) {
+            const additionalHeaders = new Headers(init.headers);
+            for (const [key, value] of additionalHeaders.entries()) {
+              if (key.toLowerCase() !== 'authorization') { // Don't override our fresh auth header
+                newHeaders.set(key, value);
+              }
+            }
+          }
+
+          // Make retry request with fresh token
+          const retryResponse = await fetch(fullUrl, {
+            ...init,
+            headers: newHeaders,
+          });
+
+          if (!retryResponse.ok) {
+            await this.handleFetchError(retryResponse, url);
+          }
+
+          return retryResponse.json();
+        } catch (error) {
+          // If token refresh fails, proceed with original error handling
+        }
+      }
+    }
 
     if (!response.ok) {
       await this.handleFetchError(response, url);
@@ -480,21 +563,48 @@ export class JiraApiService {
     file: Buffer,
     filename: string,
   ): Promise<{ id: string; filename: string }> {
+    return await this.addAttachmentWithRetry(issueKey, file, filename);
+  }
+
+  /**
+   * Add attachment with automatic retry on token expiration for OAuth
+   */
+  private async addAttachmentWithRetry(
+    issueKey: string,
+    file: Buffer,
+    filename: string,
+    isRetry: boolean = false
+  ): Promise<{ id: string; filename: string }> {
     const formData = new FormData();
     formData.append("file", new Blob([file]), filename);
 
-    const headers = new Headers(this.headers);
+    const baseUrl = await this.getApiBaseUrl();
+    const headers = await this.authStrategy.getAuthHeaders();
     headers.delete("Content-Type"); // Let the browser set the correct content type for FormData
     headers.set("X-Atlassian-Token", "no-check"); // Required for file uploads
 
     const response = await fetch(
-      `${this.baseUrl}/rest/api/3/issue/${issueKey}/attachments`,
+      `${baseUrl}/rest/api/3/issue/${issueKey}/attachments`,
       {
         method: "POST",
         headers,
         body: formData,
       },
     );
+
+    // Handle token expiration for OAuth
+    if (!response.ok && (response.status === 401 || response.status === 403) && !isRetry) {
+      if (this.authStrategy.getType() === "OAUTH_2.0" && "handleTokenExpiration" in this.authStrategy) {
+        try {
+          // Refresh token and retry once
+          await (this.authStrategy as any).handleTokenExpiration();
+          return await this.addAttachmentWithRetry(issueKey, file, filename, true);
+        } catch (error) {
+          // If token refresh fails, proceed with original error handling
+          console.error("Token refresh failed during attachment retry:", error);
+        }
+      }
+    }
 
     if (!response.ok) {
       await this.handleFetchError(response);

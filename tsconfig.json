@@ -9,10 +9,8 @@
     "rootDir": "src",
     "sourceMap": true,
     "types": ["node", "jest"],
-    "allowImportingTsExtensions": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "emitDeclarationOnly": true,
     "declaration": true
   },
   "include": ["src/**/*"],

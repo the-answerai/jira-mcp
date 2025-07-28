@@ -4,9 +4,9 @@
   "description": "JIRA MCP Server for AI-powered integration with JIRA via the Model Context Protocol",
   "type": "module",
   "scripts": {
-    "build": "vite build && chmod +x build/index.js",
+    "build": "tsc && chmod +x build/index.js",
     "start": "node build/index.js",
-    "dev": "vite",
+    "dev": "tsc --watch",
     "test": "jest --config=jest.config.cjs src/services/__tests__/basic.test.ts",
     "test:watch": "jest --config=jest.config.cjs --watch",
     "test:all": "jest --config=jest.config.cjs",

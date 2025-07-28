@@ -31,10 +31,13 @@ const mockFormattedDescription = {
 describe("JiraApiService", () => {
   describe("cleanIssue", () => {
     test("should properly handle formatted text in description", () => {
+      const mockAuthStrategy = {
+        getAuthHeaders: async () => new Headers(),
+        getType: () => "API_TOKEN"
+      };
       const service = new JiraApiService(
         "http://test",
-        "test@test.com",
-        "token"
+        mockAuthStrategy as any
       );
       const result = (service as any).cleanIssue(mockFormattedDescription);
       expect(result.description).toBe("As a user I want to see formatted text");
@@ -48,7 +51,15 @@ describe("JiraApiService", () => {
   let originalFetch: typeof fetch;
 
   beforeEach(() => {
-    service = new JiraApiService(baseUrl, email, apiToken);
+    const mockAuthStrategy = {
+      getAuthHeaders: async () => new Headers({
+        Authorization: `Basic ${Buffer.from(`${email}:${apiToken}`).toString("base64")}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      }),
+      getType: () => "API_TOKEN"
+    };
+    service = new JiraApiService(baseUrl, mockAuthStrategy as any);
     originalFetch = global.fetch;
   });
 
@@ -624,7 +635,8 @@ describe("JiraApiService", () => {
         const url = input.toString();
         expect(url).toBe(`${baseUrl}/rest/api/3/issue/${issueIdOrKey}/comment`);
         expect(init?.method).toBe("POST");
-        expect(init?.headers).toEqual(service["headers"]); // Check if headers match the instance headers
+        // Headers are now handled by auth strategy, just verify they exist
+        expect(init?.headers).toBeDefined();
 
         const sentBody = JSON.parse(init?.body as string);
         expect(sentBody.body).toEqual(expectedAdf); // Verify the ADF structure

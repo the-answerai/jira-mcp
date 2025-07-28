@@ -8,16 +8,31 @@ import {
   McpError,
 } from "@modelcontextprotocol/sdk/types.js";
 import { JiraApiService } from "./services/jira-api.js";
+import { AuthFactory, ConnectionType } from "./auth/AuthFactory.js";
 
-// Replaced Bun type declaration with standard process.env declaration
-// TypeScript will still provide type checking for these environment variables
-const JIRA_API_TOKEN = process.env.JIRA_API_TOKEN as string;
+// Environment variables
+const JIRA_CONNECTION_TYPE = (process.env.JIRA_CONNECTION_TYPE as ConnectionType) || "Api_Token";
 const JIRA_BASE_URL = process.env.JIRA_BASE_URL as string;
+
+// API Token variables
+const JIRA_API_TOKEN = process.env.JIRA_API_TOKEN as string;
 const JIRA_USER_EMAIL = process.env.JIRA_USER_EMAIL as string;
 
-if (!JIRA_API_TOKEN || !JIRA_BASE_URL || !JIRA_USER_EMAIL) {
+// OAuth variables
+const JIRA_CLIENT_ID = process.env.JIRA_CLIENT_ID as string;
+const JIRA_CLIENT_SECRET = process.env.JIRA_CLIENT_SECRET as string;
+const JIRA_REFRESH_TOKEN = process.env.JIRA_REFRESH_TOKEN as string;
+const JIRA_TOKEN_STORAGE_PATH = process.env.JIRA_TOKEN_STORAGE_PATH as string;
+
+// Validate base URL is always required
+if (!JIRA_BASE_URL) {
+  throw new Error("JIRA_BASE_URL environment variable is required");
+}
+
+// Validate connection type
+if (!["Api_Token", "Oauth_2.0"].includes(JIRA_CONNECTION_TYPE)) {
   throw new Error(
-    "JIRA_API_TOKEN, JIRA_USER_EMAIL and JIRA_BASE_URL environment variables are required"
+    `Invalid JIRA_CONNECTION_TYPE: ${JIRA_CONNECTION_TYPE}. Supported values: Api_Token, Oauth_2.0`
   );
 }
 
@@ -38,11 +53,18 @@ class JiraServer {
       }
     );
 
-    this.jiraApi = new JiraApiService(
-      JIRA_BASE_URL,
-      JIRA_USER_EMAIL,
-      JIRA_API_TOKEN
-    );
+    // Create authentication strategy
+    const authStrategy = AuthFactory.createAuthStrategy(JIRA_CONNECTION_TYPE, {
+      baseUrl: JIRA_BASE_URL,
+      email: JIRA_USER_EMAIL,
+      apiToken: JIRA_API_TOKEN,
+      clientId: JIRA_CLIENT_ID,
+      clientSecret: JIRA_CLIENT_SECRET,
+      refreshToken: JIRA_REFRESH_TOKEN,
+      tokenStoragePath: JIRA_TOKEN_STORAGE_PATH,
+    });
+
+    this.jiraApi = new JiraApiService(JIRA_BASE_URL, authStrategy);
 
     this.setupToolHandlers();
 

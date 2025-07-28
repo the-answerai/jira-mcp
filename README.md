@@ -24,11 +24,35 @@ A Model Context Protocol (MCP) server implementation that provides access to JIR
 
 ## Environment Variables
 
+The server supports two authentication methods: API Token (default) and OAuth 2.0.
+
+### API Token Authentication (Default)
+
 ```bash
-JIRA_API_TOKEN=your_api_token
+JIRA_CONNECTION_TYPE=Api_Token  # Optional, defaults to Api_Token
 JIRA_BASE_URL=your_jira_instance_url  # e.g., https://your-domain.atlassian.net
+JIRA_API_TOKEN=your_api_token
 JIRA_USER_EMAIL=your_email
 ```
+
+### OAuth 2.0 Authentication
+
+```bash
+JIRA_CONNECTION_TYPE=Oauth_2.0
+JIRA_BASE_URL=your_jira_instance_url  # e.g., https://your-domain.atlassian.net
+JIRA_CLIENT_ID=your_oauth_client_id
+JIRA_CLIENT_SECRET=your_oauth_client_secret
+JIRA_REFRESH_TOKEN=your_initial_refresh_token
+JIRA_TOKEN_STORAGE_PATH=/custom/path/to/tokens.json  # Optional, defaults to ~/.jira-mcp/tokens.json
+```
+
+**OAuth 2.0 Behavior**: 
+- Uses Atlassian's rotating refresh tokens (one-time use)
+- Stores both access and refresh tokens securely in filesystem
+- Automatically refreshes expired tokens and retries failed requests
+- On first run, uses `JIRA_REFRESH_TOKEN` from environment to bootstrap the process
+- Subsequently uses stored refresh tokens from filesystem
+- Token storage defaults to `~/.jira-mcp/tokens.json` with secure permissions (600)
 
 ## Installation & Setup
 
@@ -67,6 +91,7 @@ Edit the appropriate configuration file:
 
 Add the following configuration under the `mcpServers` object:
 
+**API Token Configuration:**
 ```json
 {
   "mcpServers": {
@@ -74,14 +99,37 @@ Add the following configuration under the `mcpServers` object:
       "command": "node",
       "args": ["/absolute/path/to/jira-mcp/build/index.js"],
       "env": {
-        "JIRA_API_TOKEN": "your_api_token",
+        "JIRA_CONNECTION_TYPE": "Api_Token",
         "JIRA_BASE_URL": "your_jira_instance_url",
+        "JIRA_API_TOKEN": "your_api_token",
         "JIRA_USER_EMAIL": "your_email"
       }
     }
   }
 }
 ```
+
+**OAuth 2.0 Configuration:**
+```json
+{
+  "mcpServers": {
+    "jira": {
+      "command": "node",
+      "args": ["/absolute/path/to/jira-mcp/build/index.js"],
+      "env": {
+        "JIRA_CONNECTION_TYPE": "Oauth_2.0",
+        "JIRA_BASE_URL": "your_jira_instance_url",
+        "JIRA_CLIENT_ID": "your_oauth_client_id",
+        "JIRA_CLIENT_SECRET": "your_oauth_client_secret",
+        "JIRA_REFRESH_TOKEN": "your_initial_refresh_token",
+        "JIRA_TOKEN_STORAGE_PATH": "/custom/path/tokens.json"
+      }
+    }
+  }
+}
+```
+
+**Note**: `JIRA_TOKEN_STORAGE_PATH` is optional and defaults to `~/.jira-mcp/tokens.json`.
 
 ### 4. Restart the MCP server.
 
@@ -223,17 +271,20 @@ Input Schema:
 - Uses Bun runtime for improved performance
 - Vite for optimized builds
 - Uses JIRA REST API v3
-- Basic authentication with API tokens
+- **Dual Authentication Support:**
+  - Basic authentication with API tokens (default)
+  - OAuth 2.0 with automatic token refresh per request
 - Batched API requests for related data
 - Optimized response payloads for AI context windows
 - Efficient transformation of complex Atlassian structures
-- Robust error handling
+- Robust error handling with OAuth-specific error messages
 - Rate limiting considerations
 - Maximum limits:
   - Search results: 50 issues per request
   - Epic children: 100 issues per request
 - Support for multipart form data for secure file attachments
 - Automatic content type detection and validation
+- **OAuth Security**: Secure filesystem token storage with automatic refresh and retry logic
 
 ## Error Handling
 
@@ -246,6 +297,14 @@ The server implements a comprehensive error handling strategy:
 - Input validation for all parameters
 - Safe error propagation through MCP protocol
 - Specialized handling for common JIRA API errors
+- **OAuth-specific error handling:**
+  - Automatic token refresh on 401/403 responses
+  - Token refresh failures with clear messaging
+  - Expired refresh token detection
+  - Invalid OAuth credential validation
+  - Connection type validation
+  - Filesystem token storage error handling
+  - Automatic retry logic for expired tokens
 - Base64 validation for attachments
 - Multipart request failure handling
 - Rate limit detection
