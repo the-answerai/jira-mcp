@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Package version override (optional)'
+        description: "Package version override (optional)"
         required: false
 
 jobs:
@@ -29,13 +29,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
-          registry-url: 'https://registry.npmjs.org'
-          scope: '@answerai'
+          node-version: "18.x"
+          registry-url: "https://registry.npmjs.org"
+          scope: "@answerai"
 
       - name: Install dependencies
         run: npm install -g pnpm && pnpm install
-      
+
       - name: Setup Git
         if: github.event_name == 'push'
         run: |
@@ -77,7 +77,7 @@ jobs:
               echo "$COMMITS" | grep -i -E '\b(feat|feature|minor)\b' > /dev/null && BUMP_TYPE="minor"
             fi
           fi
-          
+
           echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
           echo "Determined version bump: $BUMP_TYPE"
 
@@ -89,23 +89,17 @@ jobs:
           BUMP_TYPE="${{ steps.bump.outputs.bump_type }}"
           CURRENT_VERSION=$(node -p "require('./package.json').version")
           echo "Current version: $CURRENT_VERSION"
-          
-          # Only run npm version if there are commits since last tag
-          if [ -n "$COMMITS" ] && [ "$COMMITS" != "" ]; then
-            npm version $BUMP_TYPE --no-git-tag-version
-            NEW_VERSION=$(node -p "require('./package.json').version")
-            echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-            echo "New version: $NEW_VERSION"
-          else
-            echo "No new commits to bump version for, using current version"
-            echo "new_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-          fi
+
+          npm version $BUMP_TYPE --no-git-tag-version
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
 
       - name: Update package name and version
         run: |
           CURRENT_VERSION=$(node -p "require('./package.json').version")
           PACKAGE_VERSION=""
-          
+
           if [ "${{ github.event.inputs.version }}" != "" ]; then
             PACKAGE_VERSION="${{ github.event.inputs.version }}"
           elif [ "${{ github.event.release.tag_name }}" != "" ]; then
@@ -115,7 +109,7 @@ jobs:
           elif [ "${{ github.event_name }}" == "push" ]; then
             PACKAGE_VERSION="${{ steps.version.outputs.new_version }}"
           fi
-          
+
           if [ "$PACKAGE_VERSION" != "" ] && [ "$PACKAGE_VERSION" != "$CURRENT_VERSION" ]; then
             # Update package.json with new version if provided and different from current
             echo "Setting version to $PACKAGE_VERSION (was $CURRENT_VERSION)"
@@ -124,16 +118,16 @@ jobs:
           else
             echo "Version unchanged: $CURRENT_VERSION"
           fi
-          
+
           # Update package name to scoped name
           node -e "const pkg = require('./package.json'); pkg.name = '@answerai/jira-mcp'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
-          
+
           # Update package.json to include publishConfig
           node -e "const pkg = require('./package.json'); pkg.publishConfig = { access: 'public' }; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
-          
+
           # Update package.json to include repository
           node -e "const pkg = require('./package.json'); pkg.repository = { type: 'git', url: 'git+https://github.com/the-answerai/jira-mcp.git' }; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
-          
+
           # Update binary field for CLI usage
           node -e "const pkg = require('./package.json'); pkg.bin = { 'answerai-jira-mcp': './build/index.js', 'answerai-jira-mcp-check': './build/scripts/check-setup.js' }; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
 
@@ -178,7 +172,7 @@ jobs:
         run: pnpm publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          
+
       - name: Create Git Tag
         if: github.event_name == 'push' && steps.version.outputs.new_version != ''
         run: |
@@ -188,4 +182,5 @@ jobs:
             git tag -a $NEW_VERSION -m "Release $NEW_VERSION"
             git push origin $NEW_VERSION
           else
-            echo "Tag $NEW_VERSION already exists, skipping tag creation" 
+            echo "Tag $NEW_VERSION already exists, skipping tag creation"
+          fi
