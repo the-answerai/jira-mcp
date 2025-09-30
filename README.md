@@ -26,7 +26,7 @@ A Model Context Protocol (MCP) server implementation that provides access to JIR
 
 ```bash
 JIRA_API_TOKEN=your_api_token
-JIRA_BASE_URL=your_jira_instance_url  # e.g., https://your-domain.atlassian.net
+JIRA_BASE_URL=your_jira_instance_url  #e.g., https://your-domain.atlassian.net
 JIRA_USER_EMAIL=your_email
 ```
 
