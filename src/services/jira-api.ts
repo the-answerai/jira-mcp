@@ -23,7 +23,7 @@ export class JiraApiService {
 
   private async handleFetchError(
     response: Response,
-    url?: string,
+    url?: string
   ): Promise<never> {
     // First, check for network errors
     if (!response.ok) {
@@ -52,7 +52,7 @@ export class JiraApiService {
       // Ensure message is not empty before including it
       const errorMessage = message ? `: ${message}` : "";
       throw new Error(
-        `JIRA API Error${errorMessage} (Status: ${response.status})`,
+        `JIRA API Error${errorMessage} (Status: ${response.status})`
       );
     }
     // This line should ideally not be reached if response.ok is true,
@@ -67,7 +67,7 @@ export class JiraApiService {
   private extractIssueMentions(
     content: any[],
     source: "description" | "comment",
-    commentId?: string,
+    commentId?: string
   ): CleanJiraIssue["relatedIssues"] {
     const mentions: NonNullable<CleanJiraIssue["relatedIssues"]> = [];
 
@@ -176,7 +176,7 @@ export class JiraApiService {
     if (issue.fields?.description?.content) {
       const mentions = this.extractIssueMentions(
         issue.fields.description.content,
-        "description",
+        "description"
       );
       if (mentions.length > 0) {
         cleanedIssue.relatedIssues = mentions;
@@ -267,7 +267,7 @@ export class JiraApiService {
       expand: "names,renderedFields",
     });
 
-    const data = await this.fetchJson<any>(`/rest/api/3/search?${params}`);
+    const data = await this.fetchJson<any>(`/rest/api/3/search/jql?${params}`);
 
     return {
       total: data.total,
@@ -301,16 +301,16 @@ export class JiraApiService {
     const issuesWithComments = await Promise.all(
       data.issues.map(async (issue: any) => {
         const commentsData = await this.fetchJson<any>(
-          `/rest/api/3/issue/${issue.key}/comment`,
+          `/rest/api/3/issue/${issue.key}/comment`
         );
         const cleanedIssue = this.cleanIssue(issue);
         const comments = commentsData.comments.map((comment: any) =>
-          this.cleanComment(comment),
+          this.cleanComment(comment)
         );
 
         // Add comment mentions to related issues
         const commentMentions = comments.flatMap(
-          (comment: CleanComment) => comment.mentions,
+          (comment: CleanComment) => comment.mentions
         );
         cleanedIssue.relatedIssues = [
           ...cleanedIssue.relatedIssues,
@@ -319,7 +319,7 @@ export class JiraApiService {
 
         cleanedIssue.comments = comments;
         return cleanedIssue;
-      }),
+      })
     );
 
     return issuesWithComments;
@@ -362,12 +362,12 @@ export class JiraApiService {
 
     const issue = this.cleanIssue(issueData);
     const comments = commentsData.comments.map((comment: any) =>
-      this.cleanComment(comment),
+      this.cleanComment(comment)
     );
 
     // Add comment mentions to related issues
     const commentMentions = comments.flatMap(
-      (comment: CleanComment) => comment.mentions,
+      (comment: CleanComment) => comment.mentions
     );
     issue.relatedIssues = [...issue.relatedIssues, ...commentMentions];
 
@@ -377,7 +377,7 @@ export class JiraApiService {
     if (issue.epicLink) {
       try {
         const epicData = await this.fetchJson<any>(
-          `/rest/api/3/issue/${issue.epicLink.key}?fields=summary`,
+          `/rest/api/3/issue/${issue.epicLink.key}?fields=summary`
         );
         issue.epicLink.summary = epicData.fields?.summary;
       } catch (error) {
@@ -393,7 +393,7 @@ export class JiraApiService {
     issueType: string,
     summary: string,
     description?: string,
-    fields?: Record<string, any>,
+    fields?: Record<string, any>
   ): Promise<{ id: string; key: string }> {
     const payload = {
       fields: {
@@ -417,7 +417,7 @@ export class JiraApiService {
 
   async updateIssue(
     issueKey: string,
-    fields: Record<string, any>,
+    fields: Record<string, any>
   ): Promise<void> {
     await this.fetchJson(`/rest/api/3/issue/${issueKey}`, {
       method: "PUT",
@@ -426,10 +426,10 @@ export class JiraApiService {
   }
 
   async getTransitions(
-    issueKey: string,
+    issueKey: string
   ): Promise<Array<{ id: string; name: string; to: { name: string } }>> {
     const data = await this.fetchJson<any>(
-      `/rest/api/3/issue/${issueKey}/transitions`,
+      `/rest/api/3/issue/${issueKey}/transitions`
     );
     return data.transitions;
   }
@@ -437,7 +437,7 @@ export class JiraApiService {
   async transitionIssue(
     issueKey: string,
     transitionId: string,
-    comment?: string,
+    comment?: string
   ): Promise<void> {
     const payload: any = {
       transition: { id: transitionId },
@@ -478,7 +478,7 @@ export class JiraApiService {
   async addAttachment(
     issueKey: string,
     file: Buffer,
-    filename: string,
+    filename: string
   ): Promise<{ id: string; filename: string }> {
     const formData = new FormData();
     formData.append("file", new Blob([file]), filename);
@@ -493,7 +493,7 @@ export class JiraApiService {
         method: "POST",
         headers,
         body: formData,
-      },
+      }
     );
 
     if (!response.ok) {
@@ -535,7 +535,7 @@ export class JiraApiService {
    */
   async addCommentToIssue(
     issueIdOrKey: string,
-    body: string,
+    body: string
   ): Promise<AddCommentResponse> {
     const adfBody = this.createAdfFromBody(body);
 
@@ -549,7 +549,7 @@ export class JiraApiService {
       {
         method: "POST",
         body: JSON.stringify(payload),
-      },
+      }
     );
 
     // Clean the response for the MCP tool
